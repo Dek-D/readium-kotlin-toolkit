@@ -113,8 +113,8 @@ open class ReaderActivity : AppCompatActivity() {
                 AudioReaderFragment::class.java
             readerData.publication.conformsTo(Publication.Profile.EPUB) ->
                 EpubReaderFragment::class.java
-            readerData.publication.conformsTo(Publication.Profile.PDF) ->
-                PdfReaderFragment::class.java
+//            readerData.publication.conformsTo(Publication.Profile.PDF) ->
+//                PdfReaderFragment::class.java
             readerData.publication.conformsTo(Publication.Profile.DIVINA) ->
                 ImageReaderFragment::class.java
             else ->
