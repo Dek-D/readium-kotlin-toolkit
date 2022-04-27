@@ -215,11 +215,11 @@ class EpubNavigatorFragment private constructor(
         }
 
         resourcePager.adapter = adapter
-        resourcePager.direction = publication.metadata.effectiveReadingProgression
-
-        if (publication.cssStyle == ReadingProgression.RTL.value) {
-            resourcePager.direction = ReadingProgression.RTL
-        }
+//        resourcePager.direction = publication.metadata.effectiveReadingProgression
+//
+//        if (publication.cssStyle == ReadingProgression.RTL.value) {
+//            resourcePager.direction = ReadingProgression.RTL
+//        }
 
         resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
 

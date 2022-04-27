@@ -12,11 +12,12 @@ package org.readium.r2.navigator.pager
 import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
+import androidx.viewpager.widget.ViewPager
 import org.readium.r2.navigator.BuildConfig.DEBUG
 import org.readium.r2.shared.publication.Publication
 import timber.log.Timber
 
-class R2ViewPager : R2RTLViewPager {
+class R2ViewPager : ViewPager {
 
 
     lateinit var type: Publication.TYPE

@@ -79,7 +79,7 @@ dependencies {
     implementation("androidx.webkit:webkit:1.4.0")
     // Needed to avoid a crash with API 31, see https://stackoverflow.com/a/69152986/1474476
     implementation("androidx.work:work-runtime-ktx:2.7.1")
-    implementation("com.duolingo.open:rtl-viewpager:1.0.3")
+//    implementation("com.duolingo.open:rtl-viewpager:1.0.3")
 //    api("com.github.barteksc:android-pdf-viewer:2.8.2")
     // ChrisBane/PhotoView ( for the Zoom handling )
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
