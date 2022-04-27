@@ -21,7 +21,7 @@ import android.view.animation.DecelerateInterpolator
 import android.view.animation.Interpolator
 import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
-import com.shopgun.android.utils.NumberUtils
+import org.readium.r2.navigator.util.NumberUtils
 import java.util.*
 import kotlin.math.min
 import kotlin.math.roundToInt
