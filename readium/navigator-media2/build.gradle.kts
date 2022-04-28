@@ -46,7 +46,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components.getByName("release"))
-                groupId = "com.github.dekd"
+                groupId = "com.github.Dek-D"
                 artifactId = "readium-navigator-media2"
                 artifact(tasks.findByName("sourcesJar"))
                 artifact(tasks.findByName("javadocsJar"))
