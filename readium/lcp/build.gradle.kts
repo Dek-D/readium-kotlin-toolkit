@@ -43,7 +43,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components.getByName("release"))
-                groupId = "com.github.dekd.readium"
+                groupId = "com.github.dekd"
                 artifactId = "readium-lcp"
                 artifact(tasks.findByName("sourcesJar"))
                 artifact(tasks.findByName("javadocsJar"))
