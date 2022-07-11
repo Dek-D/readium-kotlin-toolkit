@@ -14,5 +14,11 @@
         <item>OpenDyslexic</item>
         <item>AccessibleDfA</item>
         <item>IA Writer Duospace</item>
+        <item>Cordia New</item>
+        <item>Noto</item>
+        <item>Noto Sans Thai</item>
+        <item>sans-serif</item>
+        <item>Sarabun</item>
+
     </string-array>
 </resources>
