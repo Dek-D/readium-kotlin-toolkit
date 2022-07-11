@@ -15,6 +15,17 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center"
+        android:indeterminateTint="#f37a01"
+        android:max="3"
+        android:progress="100" />
+
     <org.readium.r2.navigator.R2WebView
         android:id="@+id/webView"
         android:layout_width="match_parent"

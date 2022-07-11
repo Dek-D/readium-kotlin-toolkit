@@ -150,6 +150,7 @@ class R2EpubPageFragment : Fragment() {
                 webView.evaluateJavascript("true") {
                     onLoadPage()
                 }
+                binding.progressBar.visibility = View.GONE
             }
 
             // prevent favicon.ico to be loaded, this was causing NullPointerException in NanoHttp
