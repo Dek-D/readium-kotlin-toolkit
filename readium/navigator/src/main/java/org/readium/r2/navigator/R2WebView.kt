@@ -723,13 +723,22 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
 
                     if (scrollMode) {
                         val totalDelta = (y - mInitialMotionY).toInt()
-                        if (abs(totalDelta) < 200) {
+                        if (abs(totalDelta) < 50) {
                             if (mInitialMotionX < x) {
                                 scrollLeft(animated = true)
                             } else if (mInitialMotionX > x) {
                                 scrollRight(animated = true)
                             }
                         }
+                        // pull down to change chapter (still has an issue)
+//                        val totalDelta = (x - mInitialMotionX).toInt()
+//                        if (abs(totalDelta) < 200) {
+//                            if (mInitialMotionY < y) {
+//                                scrollLeft(animated = true)
+//                            } else if (mInitialMotionY > y) {
+//                                scrollRight(animated = true)
+//                            }
+//                        }
                     } else {
                         val velocity = getCurrentXVelocity() ?: 0
                         val totalDelta = (x - mInitialMotionX).toInt()
