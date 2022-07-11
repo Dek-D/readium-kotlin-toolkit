@@ -133,11 +133,16 @@ class R2EpubPageFragment : Fragment() {
                 return false
             }
 
+            override fun onLoadResource(view: WebView?, url: String?) {
+                super.onLoadResource(view, url)
+                view?.loadUrl("javascript:(function() {" +
+                        "document.body.style.wordWrap = 'break-word'" +
+                        "})();")
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-
                 webView.listener.onResourceLoaded(link, webView, url)
-
                 // To make sure the page is properly laid out before jumping to the target locator,
                 // we execute a dummy JavaScript and wait for the callback result.
                 webView.evaluateJavascript("true") {
