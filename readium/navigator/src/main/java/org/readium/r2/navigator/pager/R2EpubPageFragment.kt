@@ -16,6 +16,7 @@ import android.graphics.PointF
 import android.os.Bundle
 import android.util.Base64
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.*
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -191,7 +192,7 @@ class R2EpubPageFragment : Fragment() {
         webView.isHapticFeedbackEnabled = false
         webView.isLongClickable = false
         webView.setOnLongClickListener {
-            Timber.tag("TAG_EPUB").d("test update")
+            Log.d("TAG_EPUB", "test update")
             true
         }
 
