@@ -190,7 +190,7 @@ class R2EpubPageFragment : Fragment() {
         webView.isHapticFeedbackEnabled = false
         webView.isLongClickable = false
         webView.setOnLongClickListener {
-            false
+            true
         }
 
         resourceUrl?.let {
