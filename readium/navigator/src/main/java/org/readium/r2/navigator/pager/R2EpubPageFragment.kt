@@ -36,6 +36,7 @@ import org.readium.r2.shared.SCROLL_REF
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.ReadingProgression
+import timber.log.Timber
 import java.io.IOException
 import java.io.InputStream
 import kotlin.math.roundToInt
@@ -190,6 +191,7 @@ class R2EpubPageFragment : Fragment() {
         webView.isHapticFeedbackEnabled = false
         webView.isLongClickable = false
         webView.setOnLongClickListener {
+            Timber.tag("TAG_EPUB").d("test update")
             true
         }
 
