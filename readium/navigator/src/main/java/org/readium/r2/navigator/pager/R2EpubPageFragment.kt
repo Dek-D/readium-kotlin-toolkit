@@ -193,7 +193,6 @@ class R2EpubPageFragment : Fragment() {
         webView.isHapticFeedbackEnabled = false
         webView.isLongClickable = false
         webView.setOnLongClickListener {
-            Log.d("TAG_EPUB", "test update")
             true
         }
 

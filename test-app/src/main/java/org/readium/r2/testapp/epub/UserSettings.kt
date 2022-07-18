@@ -388,11 +388,11 @@ class UserSettings(var preferences: SharedPreferences, val context: Context, pri
                         webView.scrollToPosition(webView.progression)
                         (previousFragment as? R2EpubPageFragment)?.webView?.scrollToEnd()
                         (nextFragment as? R2EpubPageFragment)?.webView?.scrollToStart()
-                        webView.setScrollMode(b)
                         (previousFragment as? R2EpubPageFragment)?.webView?.setScrollMode(b)
                         (nextFragment as? R2EpubPageFragment)?.webView?.setScrollMode(b)
                     }
                 }
+                (context as ReaderActivity).recreate()
             }
         }
 

@@ -538,28 +538,32 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
     }
 
     override fun computeScroll() {
-        mIsScrollStarted = true
-        if (!mScroller!!.isFinished && mScroller!!.computeScrollOffset()) {
-            val oldX = scrollX
-            val oldY = scrollY
-            val x = mScroller!!.currX
-            val y = mScroller!!.currY
+        if (!scrollMode) {
+            mIsScrollStarted = true
+            if (!mScroller!!.isFinished && mScroller!!.computeScrollOffset()) {
+                val oldX = scrollX
+                val oldY = scrollY
+                val x = mScroller!!.currX
+                val y = mScroller!!.currY
 
-            if (oldX != x || oldY != y) {
-                scrollTo(x, y)
-                if (!pageScrolled(x)) {
-                    mScroller!!.abortAnimation()
-                    scrollTo(0, y)
+                if (oldX != x || oldY != y) {
+                    scrollTo(x, y)
+                    if (!pageScrolled(x)) {
+                        mScroller!!.abortAnimation()
+                        scrollTo(0, y)
+                    }
                 }
+
+                // Keep on drawing until the animation has finished.
+                ViewCompat.postInvalidateOnAnimation(this)
+                return
             }
 
-            // Keep on drawing until the animation has finished.
-            ViewCompat.postInvalidateOnAnimation(this)
-            return
+            // Done with scroll, clean up state.
+            completeScroll(true)
+        } else {
+            super.computeScroll()
         }
-
-        // Done with scroll, clean up state.
-        completeScroll(true)
     }
 
     private fun pageScrolled(xpos: Int): Boolean {
