@@ -165,23 +165,25 @@ data class Metadata(
             return readingProgression
         }
 
+        return ReadingProgression.LTR
+
         // https://github.com/readium/readium-css/blob/develop/docs/CSS16-internationalization.md#missing-page-progression-direction
-        if (languages.size != 1) {
-            return ReadingProgression.LTR
-        }
-
-        var language = languages.first().lowercase(Locale.ROOT)
-
-        if (language == "zh-hant" || language == "zh-tw") {
-            return ReadingProgression.RTL
-        }
-
-        // The region is ignored for ar, fa and he.
-        language = language.split("-", limit = 2).first()
-        return when (language) {
-            "ar", "fa", "he" -> ReadingProgression.RTL
-            else -> ReadingProgression.LTR
-        }
+//        if (languages.size != 1) {
+//            return ReadingProgression.LTR
+//        }
+//
+//        var language = languages.first().lowercase(Locale.ROOT)
+//
+//        if (language == "zh-hant" || language == "zh-tw") {
+//            return ReadingProgression.RTL
+//        }
+//
+//        // The region is ignored for ar, fa and he.
+//        language = language.split("-", limit = 2).first()
+//        return when (language) {
+//            "ar", "fa", "he" -> ReadingProgression.RTL
+//            else -> ReadingProgression.LTR
+//        }
     }
 
     /**
