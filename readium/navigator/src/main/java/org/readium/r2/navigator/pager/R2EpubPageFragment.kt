@@ -16,7 +16,6 @@ import android.graphics.PointF
 import android.os.Bundle
 import android.util.Base64
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.*
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -37,7 +36,6 @@ import org.readium.r2.shared.SCROLL_REF
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.ReadingProgression
-import timber.log.Timber
 import java.io.IOException
 import java.io.InputStream
 import kotlin.math.roundToInt
@@ -138,7 +136,7 @@ class R2EpubPageFragment : Fragment() {
             override fun onLoadResource(view: WebView?, url: String?) {
                 super.onLoadResource(view, url)
                 view?.loadUrl("javascript:(function() {" +
-                        "document.body.style.wordWrap = 'break-word'" +
+                        "document.body.style.wordBreak = 'break-all'" +
                         "})();")
             }
 

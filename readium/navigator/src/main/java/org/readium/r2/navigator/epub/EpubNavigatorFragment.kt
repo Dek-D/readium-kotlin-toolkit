@@ -425,6 +425,9 @@ class EpubNavigatorFragment private constructor(
             get() = this@EpubNavigatorFragment.readingProgression
 
         override fun onResourceLoaded(link: Link?, webView: R2BasicWebView, url: String?) {
+            webView.loadUrl("javascript:(function() {" +
+                    "document.body.style.wordBreak = 'break-all'" +
+                    "})();")
             run(viewModel.onResourceLoaded(link, webView))
         }
 

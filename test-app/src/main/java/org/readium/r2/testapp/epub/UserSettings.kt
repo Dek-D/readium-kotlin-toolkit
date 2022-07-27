@@ -28,6 +28,7 @@ import org.readium.r2.navigator.pager.R2ViewPager
 import org.readium.r2.shared.*
 import org.readium.r2.testapp.R
 import org.readium.r2.testapp.databinding.PopupWindowUserSettingsBinding
+import org.readium.r2.testapp.reader.ReaderActivity
 import org.readium.r2.testapp.utils.extensions.color
 import java.io.File
 
