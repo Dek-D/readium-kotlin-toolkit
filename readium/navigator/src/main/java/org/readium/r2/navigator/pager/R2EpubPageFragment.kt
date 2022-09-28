@@ -136,7 +136,7 @@ class R2EpubPageFragment : Fragment() {
             override fun onLoadResource(view: WebView?, url: String?) {
                 super.onLoadResource(view, url)
                 view?.loadUrl("javascript:(function() {" +
-                        "document.body.style.wordBreak = 'normal'" +
+                        "document.body.style.wordBreak = 'break-word'" +
                         "})();")
             }
 
