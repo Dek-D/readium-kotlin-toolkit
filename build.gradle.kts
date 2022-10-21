@@ -45,3 +45,16 @@ tasks.withType<DokkaTaskPartial>().configureEach {
 tasks.named<org.jetbrains.dokka.gradle.DokkaMultiModuleTask>("dokkaGfmMultiModule").configure {
     outputDirectory.set(file("${projectDir.path}/docs"))
 }
+
+allprojects {
+    configurations.all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "com.github.edrlab.nanohttpd" && requested.name == "nanohttpd") {
+                useTarget("com.github.readium.nanohttpd:nanohttpd:master-SNAPSHOT")
+            }
+            if (requested.group == "com.github.edrlab.nanohttpd" && requested.name == "nanohttpd-nanolets") {
+                useTarget("com.github.readium.nanohttpd:nanohttpd-nanolets:master-SNAPSHOT")
+            }
+        }
+    }
+}
