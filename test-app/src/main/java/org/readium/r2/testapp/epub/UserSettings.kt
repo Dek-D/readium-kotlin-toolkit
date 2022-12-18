@@ -50,7 +50,13 @@ class UserSettings(var preferences: SharedPreferences, val context: Context, pri
         "Noto",
         "Noto Sans Thai",
         "sans-serif",
-        "Sarabun"
+        "Sarabun",
+        "Chakra Petch",
+        "Mali",
+        "Maitree",
+        "Taviraj",
+        "Trirong",
+        "Kodchasan",
         )
     private val textAlignmentValues = listOf("justify", "start")
     private val columnCountValues = listOf("auto", "1", "2")
