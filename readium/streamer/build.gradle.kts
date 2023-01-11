@@ -53,7 +53,7 @@ afterEvaluate {
 }
 
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    api(files("libs/nanohttpd-2.3.2.jar", "libs/nanohttpd-nanolets-2.3.2.jar"))
 
     api(project(":readium:shared"))
 
@@ -61,12 +61,6 @@ dependencies {
     @Suppress("GradleDependency")
     implementation("com.github.barteksc:pdfium-android:1.8.2")
     implementation("com.jakewharton.timber:timber:5.0.1")
-    implementation("com.github.edrlab.nanohttpd:nanohttpd:master-SNAPSHOT") {
-        exclude(group = "org.parboiled")
-    }
-    implementation("com.github.edrlab.nanohttpd:nanohttpd-nanolets:master-SNAPSHOT") {
-        exclude(group = "org.parboiled")
-    }
     //AM NOTE: conflicting support libraries, excluding these
     implementation("com.mcxiaoke.koi:core:0.5.5") {
         exclude(module = "support-v4")
