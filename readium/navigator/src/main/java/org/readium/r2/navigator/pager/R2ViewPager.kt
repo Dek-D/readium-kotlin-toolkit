@@ -16,6 +16,7 @@ import androidx.viewpager.widget.ViewPager
 import org.readium.r2.navigator.BuildConfig.DEBUG
 import org.readium.r2.shared.publication.Publication
 import timber.log.Timber
+import java.lang.Math.abs
 
 
 class R2ViewPager : ViewPager {
@@ -23,8 +24,11 @@ class R2ViewPager : ViewPager {
 
     lateinit var type: Publication.TYPE
 
-    var mStartDragX = 0f
+    private var mStartDragX = 0f
+    private var mStartDragY = 0f
     var mOnSwipeOutListener: OnSwipeOutListener? = null
+
+    private val SWIPE_THRESHOLD = 100
 
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
@@ -37,38 +41,76 @@ class R2ViewPager : ViewPager {
         mOnSwipeOutListener = listener
     }
 
-    private fun onSwipeOutAtStart() {
-        if (mOnSwipeOutListener != null) {
-            mOnSwipeOutListener!!.onSwipeOutAtStart()
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (DEBUG) Timber.d("ev.action ${ev.action}")
+        if (type == Publication.TYPE.EPUB) {
+            if (currentItem == adapter!!.count - 1) {
+                when (ev.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        mStartDragX = ev.x
+                        mStartDragY = ev.y
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        val deltaX = ev.x - mStartDragX
+                        val deltaY = ev.y - mStartDragY
+                        if (abs(deltaX) > SWIPE_THRESHOLD || abs(deltaY) > SWIPE_THRESHOLD) {
+                            if (abs(deltaX) > abs(deltaY)) {
+                                if (deltaX < 0) {
+                                    // User has swiped left
+                                    mOnSwipeOutListener?.onSwipeOutAtEnd()
+                                } else if (deltaX > 0) {
+                                    // User has swiped right
+                                    mOnSwipeOutListener?.onSwipeOutAtStart()
+                                }
+                            } else {
+                                if (deltaY < 0) {
+                                    // User has swiped up
+                                    if (currentItem == adapter!!.count - 1) {
+                                        // User has swiped up and there are no more pages to show
+                                        mOnSwipeOutListener?.onSwipeOutAtBottom()
+                                    }
+                                } else if (deltaY > 0) {
+                                    // User has swiped down
+                                    if (currentItem == 0) {
+                                        // User has swiped down and there are no more pages to show
+                                        mOnSwipeOutListener?.onSwipeOutAtTop()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // Forward the touch event to the ViewPager
+                return super.dispatchTouchEvent(ev)
+            } else {
+                mStartDragX = 0f
+                mStartDragY = 0f
+            }
+            return super.dispatchTouchEvent(ev)
         }
-    }
+        return try {
+            // The super implementation sometimes triggers:
+            // java.lang.IllegalArgumentException: pointerIndex out of range
+            // i.e. https://stackoverflow.com/q/48496257/1474476
+            return super.dispatchTouchEvent(ev)
 
-    private fun onSwipeOutAtEnd() {
-        if (mOnSwipeOutListener != null) {
-            mOnSwipeOutListener!!.onSwipeOutAtEnd()
+        } catch (ex: IllegalArgumentException) {
+            Timber.e(ex)
+            false
         }
     }
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         if (DEBUG) Timber.d("ev.action ${ev.action}")
         if (type == Publication.TYPE.EPUB) {
-            if (currentItem == adapter!!.count - 1) {
-                val x: Float = ev.x
-                when (ev.action and MotionEvent.ACTION_MASK) {
-                    MotionEvent.ACTION_DOWN -> mStartDragX = x
-                    MotionEvent.ACTION_MOVE -> {}
-                    MotionEvent.ACTION_UP -> if (x < mStartDragX) {
-                        onSwipeOutAtEnd()
-                    } else {
-                        mStartDragX = 0f
-                    }
+            when (ev.action and MotionEvent.ACTION_MASK) {
+                MotionEvent.ACTION_DOWN -> {
+                    // prevent swipe from view pager directly
+                    if (DEBUG) Timber.d("ACTION_DOWN")
+                    return false
                 }
-            } else {
-                mStartDragX = 0f
             }
-            return super.onTouchEvent(ev)
         }
-
         return try {
             // The super implementation sometimes triggers:
             // java.lang.IllegalArgumentException: pointerIndex out of range
@@ -85,9 +127,8 @@ class R2ViewPager : ViewPager {
         if (type == Publication.TYPE.EPUB) {
             when (ev.action and MotionEvent.ACTION_MASK) {
                 MotionEvent.ACTION_DOWN -> {
-                    mStartDragX = ev.x
                     // prevent swipe from view pager directly
-                    return super.onInterceptTouchEvent(ev)
+                    return false
                 }
             }
         }
@@ -106,6 +147,9 @@ class R2ViewPager : ViewPager {
     interface OnSwipeOutListener {
         fun onSwipeOutAtStart()
         fun onSwipeOutAtEnd()
+        fun onSwipeOutAtBottom()
+        fun onSwipeOutAtTop()
     }
 
 }
+
