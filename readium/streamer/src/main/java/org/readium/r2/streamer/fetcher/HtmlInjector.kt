@@ -110,6 +110,10 @@ internal class HtmlInjector(
             endHeadIndex += element.length
         }
         resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont(fontFamily = "OpenDyslexic", href = "/assets/fonts/OpenDyslexic-Regular.otf")).toString()
+        resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont(fontFamily = "THSarabunNew", href = "/assets/fonts/THSarabunNew.ttf")).toString()
+        resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont(fontFamily = "THSarabunNew", href = "/assets/fonts/THSarabunNew-Bold.ttf")).toString()
+        resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont(fontFamily = "THSarabunNew", href = "/assets/fonts/THSarabunNew-BoldItalic.ttf")).toString()
+        resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, getHtmlFont(fontFamily = "THSarabunNew", href = "/assets/fonts/THSarabunNew-Italic.ttf")).toString()
         resourceHtml = StringBuilder(resourceHtml).insert(endHeadIndex, "<style>" +
                     "@import url('https://fonts.googleapis.com/css?family=PT+Serif|Roboto|Source+Sans+Pro|Vollkorn|Cordia+New|Noto|Noto+Sans+Thai|Sarabun|Chakra+Petch|Mali|Maitree|Taviraj|Trirong|Kodchasan|');</style>\n").toString()
 
