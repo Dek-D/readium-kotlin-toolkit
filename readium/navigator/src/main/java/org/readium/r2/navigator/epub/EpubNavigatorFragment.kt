@@ -270,6 +270,11 @@ class EpubNavigatorFragment private constructor(
 
     override fun onResume() {
         super.onResume()
+
+        if (publication == dummyPublication) {
+            throw RestorationNotSupportedException
+        }
+
         notifyCurrentLocation()
     }
 
@@ -746,6 +751,23 @@ class EpubNavigatorFragment private constructor(
             config: Configuration = Configuration(),
         ): FragmentFactory =
             createFragmentFactory { EpubNavigatorFragment(publication, baseUrl, initialLocator, listener, paginationListener, config) }
+
+        /**
+         * Creates a factory for a dummy [EpubNavigatorFragment].
+         *
+         * Used when Android restore the [EpubNavigatorFragment] after the process was killed. You
+         * need to make sure the fragment is removed from the screen before [onResume] is called.
+         */
+        fun createDummyFactory(): FragmentFactory = createFragmentFactory {
+            EpubNavigatorFragment(
+                publication = dummyPublication,
+                baseUrl = "",
+                initialLocator = Locator(href = "#", type = "application/xhtml+xml"),
+                listener = null,
+                paginationListener = null,
+                config = Configuration()
+            )
+        }
 
     }
 
