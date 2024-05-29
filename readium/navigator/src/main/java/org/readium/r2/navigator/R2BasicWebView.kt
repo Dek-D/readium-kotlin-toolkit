@@ -242,11 +242,11 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         // FIXME: Call listener.onTap if scrollLeft|Right fails
         return when {
             thresholdRange.contains(event.point.x) -> {
-//                scrollLeft(false)
+                scrollLeft(false)
                 true
             }
             thresholdRange.contains(clientWidth - event.point.x) -> {
-//                scrollRight(false)
+                scrollRight(false)
                 true
             }
             else ->
