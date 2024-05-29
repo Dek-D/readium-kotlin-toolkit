@@ -203,9 +203,9 @@ class R2EpubPageFragment : Fragment() {
 
         // Forward a tap event when the web view is not ready to propagate the taps. This allows
         // to toggle a navigation UI while a page is loading, for example.
-//        binding.root.setOnClickListenerWithPoint { _, point ->
-//            webView.listener.onTap(point)
-//        }
+        binding.root.setOnClickListenerWithPoint { _, point ->
+            webView.listener.onTap(point)
+        }
 
         return containerView
     }
