@@ -237,7 +237,7 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
 
         // Skips to previous/next pages if the tap is on the content edges.
         val clientWidth = computeHorizontalScrollExtent()
-        val thresholdRange = 0.0..(0.01 * clientWidth)
+        val thresholdRange = 0.0..(0.2 * clientWidth)
 
         // FIXME: Call listener.onTap if scrollLeft|Right fails
         return when {
