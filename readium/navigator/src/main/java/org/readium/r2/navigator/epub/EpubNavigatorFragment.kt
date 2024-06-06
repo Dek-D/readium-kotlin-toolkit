@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentFactory
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager.widget.ViewPager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +53,7 @@ import org.readium.r2.shared.publication.presentation.presentation
 import org.readium.r2.shared.publication.services.isRestricted
 import org.readium.r2.shared.publication.services.positionsByReadingOrder
 import org.readium.r2.shared.util.launchWebBrowser
+import timber.log.Timber
 import kotlin.math.ceil
 import kotlin.reflect.KClass
 
@@ -504,11 +506,13 @@ class EpubNavigatorFragment private constructor(
             r2Activity?.highlightAnnotationMarkActivated(id)
         }
 
-        override fun goForward(animated: Boolean, completion: () -> Unit): Boolean =
-            goToNextResource(animated, completion)
+        override fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean {
+            return this@EpubNavigatorFragment.goToPreviousResource(jump = jump, animated = animated)
+        }
 
-        override fun goBackward(animated: Boolean, completion: () -> Unit): Boolean =
-            goToPreviousResource(animated, completion)
+        override fun goToNextResource(jump: Boolean, animated: Boolean): Boolean {
+            return this@EpubNavigatorFragment.goToNextResource(jump = jump, animated = animated)
+        }
 
         override val selectionActionModeCallback: ActionMode.Callback?
             get() = config.selectionActionModeCallback
@@ -542,8 +546,10 @@ class EpubNavigatorFragment private constructor(
     }
 
     override fun goForward(animated: Boolean, completion: () -> Unit): Boolean {
+        Timber.tag("epub_test").d("EpubNavigatorFragment: goForward")
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
-            return goToNextResource(animated, completion)
+            Timber.tag("epub_test").d("EpubNavigatorFragment: goForward goToNextResource")
+            return goToNextResource(jump = false, animated = animated, completion)
         }
 
         val webView = currentFragment?.webView ?: return false
@@ -555,13 +561,15 @@ class EpubNavigatorFragment private constructor(
             ReadingProgression.RTL, ReadingProgression.BTT ->
                 webView.scrollLeft(animated)
         }
-        launch { completion() }
+        lifecycleScope.launch { completion() }
         return true
     }
 
     override fun goBackward(animated: Boolean, completion: () -> Unit): Boolean {
+        Timber.tag("epub_test").d("EpubNavigatorFragment: goBackward")
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
-            return goToPreviousResource(animated, completion)
+            Timber.tag("epub_test").d("EpubNavigatorFragment: goBackward goToPreviousResource")
+            return goToPreviousResource(jump = false, animated = animated, completion)
         }
 
         val webView = currentFragment?.webView ?: return false
@@ -573,11 +581,12 @@ class EpubNavigatorFragment private constructor(
             ReadingProgression.RTL, ReadingProgression.BTT ->
                 webView.scrollRight(animated)
         }
-        launch { completion() }
+        lifecycleScope.launch { completion() }
         return true
     }
 
-    private fun goToNextResource(animated: Boolean, completion: () -> Unit): Boolean {
+    private fun goToNextResource(jump: Boolean, animated: Boolean, completion: () -> Unit = {}): Boolean {
+
         val adapter = resourcePager.adapter ?: return false
         if (resourcePager.currentItem >= adapter.count - 1) {
             return false
@@ -596,12 +605,12 @@ class EpubNavigatorFragment private constructor(
                 setCurrentItem(0, false)
             }
         }
-
-        launch { completion() }
+        Timber.tag("epub_test").d("EpubNavigatorFragment: goToNextResource")
+        viewLifecycleOwner.lifecycleScope.launch { completion() }
         return true
     }
 
-    private fun goToPreviousResource(animated: Boolean, completion: () -> Unit): Boolean {
+    private fun goToPreviousResource(jump: Boolean, animated: Boolean, completion: () -> Unit = {}): Boolean {
         if (resourcePager.currentItem <= 0) {
             return false
         }
@@ -619,8 +628,8 @@ class EpubNavigatorFragment private constructor(
                 setCurrentItem(numPages - 1, false)
             }
         }
-
-        launch { completion() }
+        Timber.tag("epub_test").d("EpubNavigatorFragment: goToPreviousResource")
+        viewLifecycleOwner.lifecycleScope.launch { completion() }
         return true
     }
 

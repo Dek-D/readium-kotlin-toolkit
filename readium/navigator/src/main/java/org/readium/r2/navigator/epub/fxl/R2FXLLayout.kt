@@ -317,7 +317,7 @@ class R2FXLLayout : FrameLayout {
 
         override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
             val scale = scale
-            val newScale = NumberUtils.clamp(minScale, scale, maxScale)
+            val newScale = scale.coerceIn(minScale, maxScale)
             if (NumberUtils.isEqual(newScale, scale)) {
                 // only fling if no scale is needed - scale will happen on ACTION_UP
                 flingRunnable = FlingRunnable(context)
@@ -424,7 +424,7 @@ class R2FXLLayout : FrameLayout {
         }
         fixFocusPoint(focusX, focusY)
         if (!isAllowOverScale) {
-            newScale = NumberUtils.clamp(minScale, newScale, maxScale)
+            newScale = newScale.coerceIn(minScale, maxScale)
         }
         if (animate) {
             animatedZoomRunnable = AnimatedZoomRunnable()
@@ -443,8 +443,8 @@ class R2FXLLayout : FrameLayout {
         var tdy = dy
         if (clamp) {
             val bounds = translateDeltaBounds
-            tdx = NumberUtils.clamp(bounds.left, dx, bounds.right)
-            tdy = NumberUtils.clamp(bounds.top, dy, bounds.bottom)
+            tdx = dx.coerceIn(bounds.left, bounds.right)
+            tdy = dy.coerceIn(bounds.top, bounds.bottom)
         }
         val destPosX = tdx + posX
         val destPosY = tdy + posY
@@ -528,7 +528,7 @@ class R2FXLLayout : FrameLayout {
 
         internal fun runValidation(): Boolean {
             val scale = scale
-            val newScale = NumberUtils.clamp(minScale, scale, maxScale)
+            val newScale = scale.coerceIn(minScale, maxScale)
             scale(scale, newScale, focusX, focusY, true)
             if (animatedZoomRunnable!!.doScale() || animatedZoomRunnable!!.doTranslate()) {
                 ViewCompat.postOnAnimation(this@R2FXLLayout, animatedZoomRunnable!!)
