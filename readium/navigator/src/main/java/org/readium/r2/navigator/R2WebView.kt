@@ -729,7 +729,7 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
 
                     if (scrollMode) {
                         val totalDelta = (y - mInitialMotionY).toInt()
-                        if (abs(totalDelta) < 50) {
+                        if (abs(totalDelta) < 160) {
                             if (mInitialMotionX < x) {
                                 scrollLeft(animated = true)
                             } else if (mInitialMotionX > x) {
