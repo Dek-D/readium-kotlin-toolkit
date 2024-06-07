@@ -4,6 +4,7 @@ import android.graphics.PointF
 import android.view.View
 import org.readium.r2.navigator.VisualNavigator
 import org.readium.r2.shared.publication.ReadingProgression
+import timber.log.Timber
 
 /**
  * Convenience utility to handle page turns when tapping the edge of the screen.
@@ -21,7 +22,7 @@ class EdgeTapNavigation(
     private val navigator: VisualNavigator,
     private val minimumEdgeSize: Double = 200.0,
     private val edgeThresholdPercent: Double? = 0.3,
-    private val animatedTransition: Boolean = false,
+    private val animatedTransition: Boolean = false
 ) {
     private enum class Transition {
         FORWARD, BACKWARD, NONE;
@@ -63,20 +64,20 @@ class EdgeTapNavigation(
             ReadingProgression.RTL, ReadingProgression.BTT -> true
         }
 
-        var transition: Transition =
-            if (isHorizontal) {
-                when {
-                    rightRange.contains(point.x) -> Transition.FORWARD
-                    leftRange.contains(point.x) -> Transition.BACKWARD
-                    else -> Transition.NONE
-                }
-            } else {
-                when {
-                    bottomRange.contains(point.y) -> Transition.FORWARD
-                    topRange.contains(point.y) -> Transition.BACKWARD
-                    else -> Transition.NONE
-                }
-            }
+        var transition: Transition = Transition.NONE
+//            if (isHorizontal) {
+//                when {
+//                    rightRange.contains(point.x) -> Transition.FORWARD
+//                    leftRange.contains(point.x) -> Transition.BACKWARD
+//                    else -> Transition.NONE
+//                }
+//            } else {
+//                when {
+//                    bottomRange.contains(point.y) -> Transition.FORWARD
+//                    topRange.contains(point.y) -> Transition.BACKWARD
+//                    else -> Transition.NONE
+//                }
+//            }
 
         if (isReverse) {
             transition = transition.reverse()

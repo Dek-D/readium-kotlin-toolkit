@@ -20,6 +20,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.webkit.URLUtil
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.widget.ImageButton
 import android.widget.ListPopupWindow
@@ -32,9 +33,11 @@ import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.readium.r2.navigator.extensions.optRectF
+import org.readium.r2.shared.InternalReadiumApi
 import org.readium.r2.shared.extensions.optNullableString
 import org.readium.r2.shared.extensions.tryOrLog
 import org.readium.r2.shared.extensions.tryOrNull
+import org.readium.r2.shared.fetcher.Resource
 import org.readium.r2.shared.publication.*
 import org.readium.r2.shared.util.Href
 import timber.log.Timber
@@ -60,8 +63,8 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         fun onProgressionChanged()
         fun onHighlightActivated(id: String)
         fun onHighlightAnnotationMarkActivated(id: String)
-        fun goForward(animated: Boolean = false, completion: () -> Unit = {}): Boolean
-        fun goBackward(animated: Boolean = false, completion: () -> Unit = {}): Boolean
+        fun goForward(animated: Boolean = false, completion: () -> Unit = {}): Boolean = false
+        fun goBackward(animated: Boolean = false, completion: () -> Unit = {}): Boolean = false
 
         /**
          * Returns the custom [ActionMode.Callback] to be used with the text selection menu.
@@ -72,6 +75,16 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
          * Offers an opportunity to override a request loaded by the given web view.
          */
         fun shouldOverrideUrlLoading(webView: WebView, request: WebResourceRequest): Boolean = false
+
+        /**
+         * Requests to load the next resource in the reading order.
+         *
+         * @param jump Indicates whether it's a discontinuous jump from the current locator. Used
+         * for scroll mode.
+         */
+        fun goToNextResource(jump: Boolean, animated: Boolean): Boolean = false
+
+        fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean = false
     }
 
     lateinit var listener: Listener
@@ -150,6 +163,14 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         listener.onProgressionChanged()
     }
 
+    override fun destroy() {
+        // Prevent the web view from leaking when detached
+        // See https://github.com/readium/r2-navigator-kotlin/issues/52
+        removeJavascriptInterface("Android")
+
+        super.destroy()
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         addJavascriptInterface(this, "Android")
@@ -165,24 +186,31 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
     @android.webkit.JavascriptInterface
     open fun scrollRight(animated: Boolean = false) {
         uiScope.launch {
+            val listener = listener ?: return@launch
             listener.onScroll()
 
-            fun goRight() {
+            fun goRight(jump: Boolean) {
                 if (listener.readingProgression == ReadingProgression.RTL) {
                     listener.goBackward(animated = animated)
+                    listener.goToPreviousResource(jump = jump, animated = animated)
                 } else {
                     listener.goForward(animated = animated)
+                    listener.goToNextResource(jump = jump, animated = animated)
                 }
             }
 
-            if (scrollMode || !this@R2BasicWebView.canScrollHorizontally(1)) {
-                goRight()
-            } else {
-                runJavaScript("readium.scrollRight();") { success ->
-                    if (!success.toBoolean()) {
-                        goRight()
+            when {
+                scrollMode -> goRight(jump = true)
+
+                !this@R2BasicWebView.canScrollHorizontally(1) ->
+                    goRight(jump = false)
+
+                else ->
+                    runJavaScript("readium.scrollRight();") { success ->
+                        if (!success.toBoolean()) {
+                            goRight(jump = false)
+                        }
                     }
-                }
             }
         }
     }
@@ -192,22 +220,29 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         uiScope.launch {
             listener.onScroll()
 
-            fun goLeft() {
+            fun goLeft(jump: Boolean) {
                 if (listener.readingProgression == ReadingProgression.RTL) {
                     listener.goForward(animated = animated)
+                    listener.goToNextResource(jump = jump, animated = animated)
                 } else {
                     listener.goBackward(animated = animated)
+                    listener.goToPreviousResource(jump = jump, animated = animated)
                 }
             }
 
-            if (scrollMode || !this@R2BasicWebView.canScrollHorizontally(-1)) {
-                goLeft()
-            } else {
-                runJavaScript("readium.scrollLeft();") { success ->
-                    if (!success.toBoolean()) {
-                        goLeft()
+            when {
+                scrollMode ->
+                    goLeft(jump = true)
+
+                !this@R2BasicWebView.canScrollHorizontally(-1) ->
+                    goLeft(jump = false)
+
+                else ->
+                    runJavaScript("readium.scrollLeft();") { success ->
+                        if (!success.toBoolean()) {
+                            goLeft(jump = false)
+                        }
                     }
-                }
             }
         }
     }
@@ -240,18 +275,21 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         val thresholdRange = 0.0..(0.2 * clientWidth)
 
         // FIXME: Call listener.onTap if scrollLeft|Right fails
-        return when {
-            thresholdRange.contains(event.point.x) -> {
+        return runBlocking(uiScope.coroutineContext) { listener.onTap(event.point) ?: false }
+//        return when {
+//            thresholdRange.contains(event.point.x) -> {
 //                scrollLeft(false)
-                true
-            }
-            thresholdRange.contains(clientWidth - event.point.x) -> {
+//                true
+//            }
+//            thresholdRange.contains(clientWidth - event.point.x) -> {
 //                scrollRight(false)
-                true
-            }
-            else ->
-                runBlocking(uiScope.coroutineContext) { listener.onTap(event.point) }
-        }
+//                true
+//            }
+//            else -> {
+//                runBlocking(uiScope.coroutineContext) { listener.onTap(event.point) ?: false }
+//            }
+//
+//        }
     }
 
     /**
