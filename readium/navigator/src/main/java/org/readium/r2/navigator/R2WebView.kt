@@ -45,7 +45,6 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
 
     @android.webkit.JavascriptInterface
     override fun scrollRight(animated: Boolean) {
-        Timber.tag("epub_test").d("R2WebView: scrollRight")
         super.scrollRight(animated)
         uiScope.launch {
             if (mCurItem < numPages - 1) {
@@ -59,7 +58,6 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
 
     @android.webkit.JavascriptInterface
     override fun scrollLeft(animated: Boolean) {
-        Timber.tag("epub_test").d("R2WebView: scrollLeft")
         super.scrollLeft(animated)
         uiScope.launch {
             if (mCurItem > 0) {

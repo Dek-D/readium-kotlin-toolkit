@@ -546,9 +546,7 @@ class EpubNavigatorFragment private constructor(
     }
 
     override fun goForward(animated: Boolean, completion: () -> Unit): Boolean {
-        Timber.tag("epub_test").d("EpubNavigatorFragment: goForward")
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
-            Timber.tag("epub_test").d("EpubNavigatorFragment: goForward goToNextResource")
             return goToNextResource(jump = false, animated = animated, completion)
         }
 
@@ -566,9 +564,7 @@ class EpubNavigatorFragment private constructor(
     }
 
     override fun goBackward(animated: Boolean, completion: () -> Unit): Boolean {
-        Timber.tag("epub_test").d("EpubNavigatorFragment: goBackward")
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
-            Timber.tag("epub_test").d("EpubNavigatorFragment: goBackward goToPreviousResource")
             return goToPreviousResource(jump = false, animated = animated, completion)
         }
 
@@ -605,7 +601,6 @@ class EpubNavigatorFragment private constructor(
                 setCurrentItem(0, false)
             }
         }
-        Timber.tag("epub_test").d("EpubNavigatorFragment: goToNextResource")
         viewLifecycleOwner.lifecycleScope.launch { completion() }
         return true
     }
@@ -628,7 +623,6 @@ class EpubNavigatorFragment private constructor(
                 setCurrentItem(numPages - 1, false)
             }
         }
-        Timber.tag("epub_test").d("EpubNavigatorFragment: goToPreviousResource")
         viewLifecycleOwner.lifecycleScope.launch { completion() }
         return true
     }

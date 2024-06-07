@@ -83,8 +83,6 @@ class EdgeTapNavigation(
             transition = transition.reverse()
         }
 
-        Timber.tag("epub_test").d("onTap: EdgeTapNavigation transition:$transition")
-
         return when (transition) {
             Transition.FORWARD -> navigator.goForward(animated = animatedTransition)
             Transition.BACKWARD -> navigator.goBackward(animated = animatedTransition)

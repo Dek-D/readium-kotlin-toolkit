@@ -185,7 +185,6 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
 
     @android.webkit.JavascriptInterface
     open fun scrollRight(animated: Boolean = false) {
-        Timber.tag("epub_test").d("R2BasicWebView: scrollRight")
         uiScope.launch {
             val listener = listener ?: return@launch
             listener.onScroll()
@@ -218,7 +217,6 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
 
     @android.webkit.JavascriptInterface
     open fun scrollLeft(animated: Boolean = false) {
-        Timber.tag("epub_test").d("R2BasicWebView: scrollLeft")
         uiScope.launch {
             listener.onScroll()
 
@@ -280,17 +278,14 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         return runBlocking(uiScope.coroutineContext) { listener.onTap(event.point) ?: false }
 //        return when {
 //            thresholdRange.contains(event.point.x) -> {
-//                Timber.tag("epub_test").d("R2BasicWebView onTap scrollLeft")
 //                scrollLeft(false)
 //                true
 //            }
 //            thresholdRange.contains(clientWidth - event.point.x) -> {
-//                Timber.tag("epub_test").d("R2BasicWebView onTap scrollRight")
 //                scrollRight(false)
 //                true
 //            }
 //            else -> {
-//                Timber.tag("epub_test").d("R2BasicWebView onTap runBlocking")
 //                runBlocking(uiScope.coroutineContext) { listener.onTap(event.point) ?: false }
 //            }
 //
