@@ -267,7 +267,7 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
         // We ignore taps on interactive element, unless it's an element we handle ourselves such as
         // pop-up footnotes.
         if (event.interactiveElement != null) {
-            return handleFootnote(event.targetElement)
+            return handleFootnote(event.interactiveElement)
         }
 
         // Skips to previous/next pages if the tap is on the content edges.
