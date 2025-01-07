@@ -6,6 +6,7 @@ plugins {
     id("com.vanniktech.maven.publish")
     id("org.jetbrains.kotlin.android")
     kotlin("plugin.parcelize")
+    id ("maven-publish")
 }
 
 group = property("pom.groupId") as String
