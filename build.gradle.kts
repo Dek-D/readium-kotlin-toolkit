@@ -9,6 +9,7 @@ import org.jetbrains.dokka.gradle.DokkaTaskPartial
 plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
+    id("maven-publish")
 }
 
 subprojects {
