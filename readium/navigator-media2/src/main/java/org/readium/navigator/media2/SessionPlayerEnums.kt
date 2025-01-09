@@ -7,7 +7,7 @@
 package org.readium.navigator.media2
 
 import androidx.media2.common.SessionPlayer
-import org.readium.r2.shared.util.Try
+import org.readium.dekd.shared.util.Try
 import kotlin.IllegalStateException
 
 internal enum class SessionPlayerState {

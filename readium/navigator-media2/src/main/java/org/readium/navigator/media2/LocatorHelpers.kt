@@ -6,7 +6,7 @@
 
 package org.readium.navigator.media2
 
-import org.readium.r2.shared.publication.Locator
+import org.readium.dekd.shared.publication.Locator
 import java.util.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds

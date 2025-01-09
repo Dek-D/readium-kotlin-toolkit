@@ -20,10 +20,10 @@ import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.upstream.DataSource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import org.readium.r2.navigator.Navigator
-import org.readium.r2.shared.publication.*
-import org.readium.r2.shared.util.Try
-import org.readium.r2.shared.util.flatMap
+import org.readium.dekd.navigator.Navigator
+import org.readium.dekd.shared.publication.*
+import org.readium.dekd.shared.util.Try
+import org.readium.dekd.shared.util.flatMap
 import timber.log.Timber
 import java.util.concurrent.Executors
 import kotlin.time.Duration

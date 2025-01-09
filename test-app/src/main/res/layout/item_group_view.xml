@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
-        tools:context="org.readium.r2.testapp.opds"
+        tools:context="org.readium.dekd.testapp.opds"
         tools:listitem="@layout/item_recycle_button" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
