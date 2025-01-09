@@ -10,7 +10,7 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="org.readium.dekd.navigator">
+    package="org.readiumd.dekd.navigator">
 
     <uses-permission android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
@@ -18,16 +18,16 @@
     <application>
 
         <activity
-            android:name="org.readium.dekd.navigator.epub.R2EpubActivity"
+            android:name="org.readiumd.dekd.navigator.epub.R2EpubActivity"
             android:theme="@style/AppTheme" />
         <activity
-            android:name="org.readium.dekd.navigator.cbz.R2CbzActivity"
+            android:name="org.readiumd.dekd.navigator.cbz.R2CbzActivity"
             android:theme="@style/AppTheme" />
         <activity
-            android:name="org.readium.dekd.navigator.audiobook.R2AudiobookActivity"
+            android:name="org.readiumd.dekd.navigator.audiobook.R2AudiobookActivity"
             android:theme="@style/AppTheme" />
         <activity
-            android:name="org.readium.dekd.navigator.divina.R2DiViNaActivity"
+            android:name="org.readiumd.dekd.navigator.divina.R2DiViNaActivity"
             android:theme="@style/AppTheme" />
         <activity
             android:name=".pdf.R2PdfActivity"

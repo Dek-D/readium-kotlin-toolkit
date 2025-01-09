@@ -5,7 +5,7 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/r2_pdf_navigator"
-        android:name="org.readium.dekd.navigator.pdf.PdfNavigatorFragment"
+        android:name="org.readiumd.dekd.navigator.pdf.PdfNavigatorFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         />

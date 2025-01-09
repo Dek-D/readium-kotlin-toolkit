@@ -7,7 +7,7 @@
   ~ LICENSE file present in the project repository where this source code is maintained.
   -->
 
-<org.readium.dekd.navigator.epub.fxl.R2FXLLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<org.readiumd.dekd.navigator.epub.fxl.R2FXLLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/r2FXLLayout"
     android:layout_width="match_parent"
@@ -32,7 +32,7 @@
                 android:orientation="horizontal"
                 tools:ignore="UselessParent">
 
-                <org.readium.dekd.navigator.R2BasicWebView
+                <org.readiumd.dekd.navigator.R2BasicWebView
                     android:id="@+id/firstWebView"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -40,7 +40,7 @@
                     android:layout_weight="1"
                     android:layerType="hardware" />
 
-                <org.readium.dekd.navigator.R2BasicWebView
+                <org.readiumd.dekd.navigator.R2BasicWebView
                     android:id="@+id/secondWebView"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -51,4 +51,4 @@
             </LinearLayout>
         </RelativeLayout>
     </ScrollView>
-</org.readium.dekd.navigator.epub.fxl.R2FXLLayout>
+</org.readiumd.dekd.navigator.epub.fxl.R2FXLLayout>
