@@ -11,6 +11,16 @@ plugins {
 
 android {
     namespace = "org.readium.navigators.media.common"
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+        allWarningsAsErrors = true
+    }
 }
 
 dependencies {
