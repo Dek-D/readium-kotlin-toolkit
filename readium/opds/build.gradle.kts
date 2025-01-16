@@ -5,15 +5,26 @@
  */
 
 plugins {
-    id("readium.library-conventions")
+    id("com.android.library")
+    alias(libs.plugins.ksp)
+    id("kotlin-android")
+    id("kotlin-parcelize")
+    id("kotlin-kapt")
     id("maven-publish")
-    kotlin("kapt")
-    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.dokka")
 }
 
 android {
     namespace = "org.readium.r2.opds"
 
+    compileSdk = 34
+    defaultConfig {
+        minSdk = 21
+        targetSdk = 34
+    }
+    buildFeatures {
+        buildConfig = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -33,8 +44,7 @@ afterEvaluate {
                 from(components.getByName("release"))
                 groupId = "com.github.Dek-D"
                 artifactId = "readium-opds"
-                artifact(tasks.findByName("sourcesJar"))
-                artifact(tasks.findByName("javadocsJar"))
+
             }
         }
     }
@@ -55,4 +65,5 @@ dependencies {
     androidTestImplementation(libs.androidx.expresso.core)
 
     testImplementation(libs.robolectric)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }

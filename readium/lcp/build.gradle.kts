@@ -5,25 +5,45 @@
  */
 
 plugins {
-    id("readium.library-conventions")
+    id("com.android.library")
     alias(libs.plugins.ksp)
+    id("kotlin-android")
+    id("kotlin-parcelize")
+    id("kotlin-kapt")
     id("maven-publish")
-    kotlin("kapt")
-    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.dokka")
 }
 
 android {
     namespace = "org.readium.r2.lcp"
 
+    compileSdk = 34
+    defaultConfig {
+        minSdk = 21
+        targetSdk = 34
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
+
     }
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
         allWarningsAsErrors = true
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"))
+        }
     }
 }
 
@@ -34,8 +54,6 @@ afterEvaluate {
                 from(components.getByName("release"))
                 groupId = "com.github.Dek-D"
                 artifactId = "readium-lcp"
-                artifact(tasks.findByName("sourcesJar"))
-                artifact(tasks.findByName("javadocsJar"))
             }
         }
     }
@@ -69,4 +87,5 @@ dependencies {
 
     androidTestImplementation(libs.androidx.ext.junit)
     androidTestImplementation(libs.androidx.expresso.core)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }

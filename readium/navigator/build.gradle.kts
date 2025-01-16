@@ -5,18 +5,27 @@
  */
 
 plugins {
-    id("readium.library-conventions")
-    alias(libs.plugins.kotlin.serialization)
+    id("com.android.library")
+    alias(libs.plugins.ksp)
+    id("kotlin-android")
+    id("kotlin-parcelize")
+    id("kotlin-kapt")
     id("maven-publish")
-    kotlin("kapt")
-    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.dokka")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "org.readium.r2.navigator"
 
+    compileSdk = 34
+    defaultConfig {
+        minSdk = 21
+        targetSdk = 34
+    }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -38,8 +47,7 @@ afterEvaluate {
                 from(components.getByName("release"))
                 groupId = "com.github.Dek-D"
                 artifactId = "readium-navigator"
-                artifact(tasks.findByName("sourcesJar"))
-                artifact(tasks.findByName("javadocsJar"))
+
             }
         }
     }
@@ -84,4 +92,5 @@ dependencies {
     testImplementation(libs.kotlin.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }

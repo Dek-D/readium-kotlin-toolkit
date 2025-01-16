@@ -5,17 +5,26 @@
  */
 
 plugins {
-    id("readium.library-conventions")
+    id("com.android.library")
+    alias(libs.plugins.ksp)
+    id("kotlin-android")
+    id("kotlin-parcelize")
+    id("kotlin-kapt")
     id("maven-publish")
-    kotlin("kapt")
-    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.dokka")
 }
 
 android {
     namespace = "org.readium.navigator.media2"
 
+    compileSdk = 34
+    defaultConfig {
+        minSdk = 21
+        targetSdk = 34
+    }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -37,8 +46,7 @@ afterEvaluate {
                 from(components.getByName("release"))
                 groupId = "com.github.Dek-D"
                 artifactId = "readium-navigator-media2"
-                artifact(tasks.findByName("sourcesJar"))
-                artifact(tasks.findByName("javadocsJar"))
+
             }
         }
     }
@@ -58,4 +66,5 @@ dependencies {
 
     androidTestImplementation(libs.androidx.ext.junit)
     androidTestImplementation(libs.androidx.expresso.core)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }
