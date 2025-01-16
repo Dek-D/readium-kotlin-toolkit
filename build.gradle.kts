@@ -16,7 +16,6 @@ subprojects {
         apply(plugin = "org.jetbrains.dokka")
     }
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    apply(plugin = "maven-publish")
 
     ktlint {
         android.set(true)
