@@ -56,3 +56,36 @@ kotlin {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
+
+mavenPublishing {
+    coordinates(
+        groupId = group.toString(),
+        artifactId = property("pom.artifactId") as String,
+        version = property("pom.version") as String
+    )
+
+    pom {
+        name.set(property("pom.artifactId") as String)
+        description.set("A toolkit for ebooks, audiobooks and comics written in Kotlin")
+        url.set("https://github.com/Dek-D/readium-kotlin-toolkit")
+        licenses {
+            license {
+                name.set("BSD-3-Clause license")
+                url.set("https://github.com/readium/kotlin-toolkit/blob/main/LICENSE")
+            }
+        }
+        developers {
+            developer {
+
+        }
+            }
+        scm {
+            url.set("https://github.com/Dek-D/readium-kotlin-toolkit")
+            connection.set("scm:git:github.com/Dek-D/readium-kotlin-toolkit.git")
+            developerConnection.set("scm:git:ssh://github.com/Dek-D/readium-kotlin-toolkit.git")
+        }
+    }
+
+    publishToMavenCentral(SonatypeHost.S01)
+    signAllPublications()
+}
