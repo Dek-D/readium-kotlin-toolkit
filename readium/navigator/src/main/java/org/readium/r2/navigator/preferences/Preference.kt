@@ -71,7 +71,7 @@ public interface EnumPreference<T> : Preference<T> {
  */
 public interface RangePreference<T : Comparable<T>> : Preference<T> {
 
-    public val supportedRange: ClosedRange<T>
+    public var supportedRange: ClosedRange<T>
 
     /**
      * Increment the preference value from its current value or a default value.
@@ -87,4 +87,11 @@ public interface RangePreference<T : Comparable<T>> : Preference<T> {
      * Format [value] in a way suitable for display, including unit if relevant.
      */
     public fun formatValue(value: T): String
+
+    /**
+     * Set new range of supported values.
+     */
+    public fun setNewSupportedRange(value: ClosedRange<T>) {
+        supportedRange = value
+    }
 }

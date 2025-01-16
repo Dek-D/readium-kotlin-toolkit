@@ -53,7 +53,7 @@ public class RangePreferenceDelegate<T : Comparable<T>>(
     getIsEffective: () -> Boolean,
     updateValue: (T?) -> Unit,
     private val valueFormatter: (T) -> String,
-    override val supportedRange: ClosedRange<T>,
+    override var supportedRange: ClosedRange<T>,
     private val progressionStrategy: ProgressionStrategy<T>
 ) : PreferenceDelegate<T>(getValue, getEffectiveValue, getIsEffective, updateValue),
     RangePreference<T> {

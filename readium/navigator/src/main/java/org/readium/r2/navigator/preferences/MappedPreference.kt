@@ -162,8 +162,9 @@ private class MappedRangePreference<T : Comparable<T>, V : Comparable<V>>(
     private val decrementer: (RangePreference<V>.() -> Unit)?
 ) : MappedPreference<T, V>(original, from, to), RangePreference<V> {
 
-    override val supportedRange: ClosedRange<V>
+    override var supportedRange: ClosedRange<V>
         get() = transformSupportedRange(original.supportedRange)
+        set(value) { super.setNewSupportedRange(value) }
 
     override fun set(value: V?) {
         super.set(value?.coerceIn(supportedRange))

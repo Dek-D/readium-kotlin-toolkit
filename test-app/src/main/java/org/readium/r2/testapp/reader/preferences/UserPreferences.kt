@@ -535,6 +535,7 @@ private fun ReflowableUserPreferences(
             }
 
             if (lineHeight != null) {
+                lineHeight.setNewSupportedRange(1.0..5.0)
                 StepperItem(
                     title = "Line height",
                     preference = lineHeight,
