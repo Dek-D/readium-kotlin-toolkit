@@ -27,6 +27,21 @@ android {
     }
 }
 
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components.getByName("release"))
+                groupId = "com.github.Dek-D"
+                artifactId = "readium-lcp"
+                artifact(tasks.findByName("sourcesJar"))
+                artifact(tasks.findByName("javadocsJar"))
+            }
+        }
+    }
+}
+
+
 dependencies {
     implementation(libs.kotlinx.coroutines.android)
 

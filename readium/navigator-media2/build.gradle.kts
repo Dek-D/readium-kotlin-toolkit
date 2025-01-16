@@ -30,6 +30,20 @@ android {
     }
 }
 
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components.getByName("release"))
+                groupId = "com.github.Dek-D"
+                artifactId = "readium-navigator-media2"
+                artifact(tasks.findByName("sourcesJar"))
+                artifact(tasks.findByName("javadocsJar"))
+            }
+        }
+    }
+}
+
 dependencies {
     api(project(":readium:readium-shared"))
     api(project(":readium:readium-navigator"))
