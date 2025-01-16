@@ -6,10 +6,22 @@
 
 plugins {
     id("readium.library-conventions")
+    kotlin("kapt")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "org.readium.adapter.pspdfkit.document"
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+        allWarningsAsErrors = true
+    }
 }
 
 dependencies {

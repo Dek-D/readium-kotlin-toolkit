@@ -7,10 +7,22 @@
 plugins {
     id("readium.library-conventions")
     alias(libs.plugins.kotlin.serialization)
+    kotlin("kapt")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "org.readium.adapter.pdfium.navigator"
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+        allWarningsAsErrors = true
+    }
 
     buildFeatures {
         viewBinding = true

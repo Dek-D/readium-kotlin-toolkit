@@ -8,10 +8,22 @@ plugins {
     id("readium.library-conventions")
     alias(libs.plugins.kotlin.serialization)
     id("maven-publish")
+    kotlin("kapt")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "org.readium.navigators.media.tts"
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+        allWarningsAsErrors = true
+    }
 }
 
 dependencies {

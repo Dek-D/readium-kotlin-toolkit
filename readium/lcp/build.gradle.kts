@@ -8,6 +8,8 @@ plugins {
     id("readium.library-conventions")
     alias(libs.plugins.ksp)
     id("maven-publish")
+    kotlin("kapt")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
