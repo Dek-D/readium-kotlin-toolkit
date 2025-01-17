@@ -89,6 +89,7 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.ReadingProgression as PublicationReadingProgression
+import org.readium.r2.navigator.pager.OnSwipeOutListener
 import org.readium.r2.shared.publication.epub.EpubLayout
 import org.readium.r2.shared.publication.presentation.presentation
 import org.readium.r2.shared.publication.services.positionsByReadingOrder
@@ -457,10 +458,12 @@ public class EpubNavigatorFragment internal constructor(
             "The parent view of the EPUB `resourcePager` must be a ConstraintLayout"
         }
         // We need to null out the adapter explicitly, otherwise the page fragments will leak.
+        val onSwipeOutListener = resourcePager.mOnSwipeOutListener
         resourcePager.adapter = null
         parent.removeView(resourcePager)
 
         resourcePager = R2ViewPager(requireContext())
+        resourcePager.mOnSwipeOutListener = onSwipeOutListener
         resourcePager.id = R.id.resourcePager
         resourcePager.publicationType = when (publication.metadata.presentation.layout) {
             EpubLayout.REFLOWABLE, null -> R2ViewPager.PublicationType.EPUB
@@ -1174,6 +1177,37 @@ public class EpubNavigatorFragment internal constructor(
         public fun assetUrl(path: String): Url? =
             WebViewServer.assetUrl(path)
     }
+
+    fun setSwipeOutEvent(listener: OnSwipeOutListener) {
+        resourcePager.setOnSwipeOutListener(listener)
+    }
+
+    fun isHorizontalLastPage(): Boolean {
+        val currentPage =
+            (resourcePager.adapter as R2PagerAdapter).getCurrentFragment()
+        if (currentPage is R2EpubPageFragment) {
+            currentPage.webView?.let { webView ->
+                if (!webView.canScrollHorizontally(webView.scrollX)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    fun isVerticalLastPage(): Boolean {
+        val currentPage =
+            (resourcePager.adapter as R2PagerAdapter).getCurrentFragment()
+        if (currentPage is R2EpubPageFragment) {
+            currentPage.webView?.let { webView ->
+                if (webView.scrollY == webView.contentHeight - webView.height) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
 }
 
 @ExperimentalReadiumApi
