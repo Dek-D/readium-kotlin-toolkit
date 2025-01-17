@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.appcompat.widget.SearchView
 import androidx.core.os.BundleCompat
@@ -30,6 +31,7 @@ import org.readium.r2.navigator.epub.*
 import org.readium.r2.navigator.epub.css.FontStyle
 import org.readium.r2.navigator.html.HtmlDecorationTemplate
 import org.readium.r2.navigator.html.toCss
+import org.readium.r2.navigator.pager.OnSwipeOutListener
 import org.readium.r2.navigator.preferences.FontFamily
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
@@ -38,6 +40,7 @@ import org.readium.r2.testapp.LITERATA
 import org.readium.r2.testapp.R
 import org.readium.r2.testapp.reader.preferences.UserPreferencesViewModel
 import org.readium.r2.testapp.search.SearchFragment
+import timber.log.Timber
 
 @OptIn(ExperimentalReadiumApi::class)
 class EpubReaderFragment : VisualReaderFragment() {
@@ -188,6 +191,38 @@ class EpubReaderFragment : VisualReaderFragment() {
             viewLifecycleOwner
         )
     }
+
+    override fun onResume() {
+        super.onResume()
+        navigator.setSwipeOutEvent(
+            object : OnSwipeOutListener {
+                override fun onSwipeOutAtStart() {
+                    Timber.tag("TAG_EPUB").d("onSwipeOutAtStart")
+                    Toast.makeText(context, "Swipe out at start", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onSwipeOutAtEnd() {
+                    if (navigator.isHorizontalLastPage()) {
+                        Timber.tag("TAG_EPUB").d("onSwipeOutAtEnd")
+                        Toast.makeText(context, "Swipe out at end", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onSwipeOutAtBottom() {
+                    if (navigator.isVerticalLastPage()) {
+                        Timber.tag("TAG_EPUB").d("onSwipeOutAtBottom")
+                        Toast.makeText(context, "Swipe out at bottom", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onSwipeOutAtTop() {
+                    Timber.tag("TAG_EPUB").d("onSwipeOutAtTop")
+                    Toast.makeText(context, "Swipe out at top", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+    }
+
 
     /**
      * Will display margin labels next to page numbers in an EPUB publication with a `page-list`
