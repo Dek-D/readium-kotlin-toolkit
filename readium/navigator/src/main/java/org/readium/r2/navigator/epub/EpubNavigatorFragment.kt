@@ -72,6 +72,7 @@ import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.KeyInterceptorView
 import org.readium.r2.navigator.input.TapEvent
+import org.readium.r2.navigator.pager.OnSwipeOutListener
 import org.readium.r2.navigator.pager.R2EpubPageFragment
 import org.readium.r2.navigator.pager.R2PagerAdapter
 import org.readium.r2.navigator.pager.R2PagerAdapter.PageResource
@@ -89,7 +90,6 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.ReadingProgression as PublicationReadingProgression
-import org.readium.r2.navigator.pager.OnSwipeOutListener
 import org.readium.r2.shared.publication.epub.EpubLayout
 import org.readium.r2.shared.publication.presentation.presentation
 import org.readium.r2.shared.publication.services.positionsByReadingOrder
@@ -340,6 +340,10 @@ public class EpubNavigatorFragment internal constructor(
 
     private var scrollToEndOnNextLoad = false
 
+    // Guards against rapid consecutive chapter navigation (e.g. fast fling triggering multiple
+    // goToNextResource calls before the ViewPager animation settles).
+    private var chapterNavigationInProgress = false
+
     private var _binding: ReadiumNavigatorViewpagerBinding? = null
     private val binding get() = _binding!!
 
@@ -426,10 +430,13 @@ public class EpubNavigatorFragment internal constructor(
                     if (viewModel.isScrollEnabled.value) {
                         if (currentPagerPosition < position) {
                             // handle swipe LEFT
-                            webView.scrollToStart()
+                            webView.post { webView.scrollToStart() }
                         } else if (currentPagerPosition > position) {
-                            // handle swipe RIGHT
-                            webView.scrollToEnd()
+                            // handle swipe RIGHT — defer so it runs after the ViewPager animation
+                            // frame completes and doesn't get overridden by a pending layout pass
+                            webView.post { webView.scrollToEnd() }
+                        } else {
+
                         }
                     } else {
                         if (currentPagerPosition < position) {
@@ -438,12 +445,20 @@ public class EpubNavigatorFragment internal constructor(
                         } else if (currentPagerPosition > position) {
                             // handle swipe RIGHT
                             webView.setCurrentItem(webView.numPages - 1, false)
+                        } else {
+
                         }
                     }
                 }
                 currentPagerPosition = position // Update current position
 
                 notifyCurrentLocation()
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state == ViewPager.SCROLL_STATE_IDLE) {
+                    chapterNavigationInProgress = false
+                }
             }
         })
 
@@ -899,6 +914,7 @@ public class EpubNavigatorFragment internal constructor(
     }
 
     private fun updateScrollPageTransformer(verticalScrollEnabled: Boolean) {
+        resourcePager.verticalScrollMode = verticalScrollEnabled
         if (verticalScrollEnabled) {
             resourcePager.setPageTransformer(true, VerticalPageTransformer())
         } else {
@@ -948,6 +964,7 @@ public class EpubNavigatorFragment internal constructor(
     }
 
     private fun goToNextResource(jump: Boolean, animated: Boolean): Boolean {
+        if (chapterNavigationInProgress) return false
         val adapter = resourcePager.adapter ?: return false
         if (resourcePager.currentItem >= adapter.count - 1) {
             return false
@@ -957,8 +974,11 @@ public class EpubNavigatorFragment internal constructor(
             locatorToNextResource()?.let { listener?.onJumpToLocator(it) }
         }
 
+        chapterNavigationInProgress = true
         scrollToEndOnNextLoad = false
         resourcePager.setCurrentItem(resourcePager.currentItem + 1, animated)
+        // For non-animated transitions SCROLL_STATE_IDLE may not fire, reset on next frame.
+        if (!animated) view?.post { chapterNavigationInProgress = false }
 
         currentReflowablePageFragment?.webView?.let { webView ->
             if (settings.value.readingProgression == ReadingProgression.RTL) {
@@ -972,6 +992,7 @@ public class EpubNavigatorFragment internal constructor(
     }
 
     private fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean {
+        if (chapterNavigationInProgress) return false
         if (resourcePager.currentItem <= 0) {
             return false
         }
@@ -980,13 +1001,21 @@ public class EpubNavigatorFragment internal constructor(
             locatorToPreviousResource()?.let { listener?.onJumpToLocator(it) }
         }
 
+        chapterNavigationInProgress = true
         if (settings.value.scroll && !settings.value.verticalText) {
             scrollToEndOnNextLoad = true
         }
         resourcePager.setCurrentItem(resourcePager.currentItem - 1, animated)
+        // For non-animated transitions SCROLL_STATE_IDLE may not fire, reset on next frame.
+        if (!animated) view?.post { chapterNavigationInProgress = false }
 
         currentReflowablePageFragment?.webView?.let { webView ->
-            if (settings.value.readingProgression == ReadingProgression.RTL) {
+            if (settings.value.scroll && !settings.value.verticalText) {
+                // In vertical scroll mode each chapter has numPages==1, so setCurrentItem(0)
+                // maps to scrollTo(0,0) which wrongly resets scroll to the top. Call
+                // scrollToEnd directly so the reader lands at the bottom of the previous chapter.
+                webView.post { webView.scrollToEnd() }
+            } else if (settings.value.readingProgression == ReadingProgression.RTL) {
                 webView.setCurrentItem(0, false)
             } else {
                 webView.setCurrentItem(webView.numPages - 1, false)

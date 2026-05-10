@@ -35,6 +35,17 @@ internal class R2ViewPager : R2RTLViewPager {
 
     private val SWIPE_THRESHOLD = 100
 
+    /**
+     * When true, a larger horizontal displacement is required before the ViewPager intercepts
+     * touch events for chapter navigation. This prevents accidental chapter changes during
+     * normal vertical reading scroll.
+     */
+    var verticalScrollMode = false
+    private var mInterceptStartX = 0f
+
+    // Minimum horizontal displacement (dp) required to trigger chapter navigation in vertical mode.
+    private val CHAPTER_SWIPE_MIN_DP = 120f
+
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
 
@@ -132,8 +143,19 @@ internal class R2ViewPager : R2RTLViewPager {
         if (publicationType == PublicationType.EPUB) {
             when (ev.action and MotionEvent.ACTION_MASK) {
                 MotionEvent.ACTION_DOWN -> {
-                    // prevent swipe from view pager directly
+                    mInterceptStartX = ev.x
                     return false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (verticalScrollMode) {
+                        val deltaX = abs(ev.x - mInterceptStartX)
+                        val minPx = CHAPTER_SWIPE_MIN_DP * resources.displayMetrics.density
+                        if (deltaX < minPx) {
+                            // Horizontal displacement not large enough — keep the WebView in
+                            // control so normal vertical reading scroll is not interrupted.
+                            return false
+                        }
+                    }
                 }
             }
         }
