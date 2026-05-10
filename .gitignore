@@ -93,3 +93,5 @@ lcp.patch
 .envrc
 /.idea/
 
+# Claude Setting
+/CLAUDE.md
