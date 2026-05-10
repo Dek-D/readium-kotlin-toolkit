@@ -338,6 +338,8 @@ public class EpubNavigatorFragment internal constructor(
     internal lateinit var adapter: R2PagerAdapter
     private lateinit var currentActivity: FragmentActivity
 
+    private var scrollToEndOnNextLoad = false
+
     private var _binding: ReadiumNavigatorViewpagerBinding? = null
     private val binding get() = _binding!!
 
@@ -478,6 +480,10 @@ public class EpubNavigatorFragment internal constructor(
         parent.addView(resourcePager)
 
         resetResourcePagerAdapter()
+
+        val isVerticalScroll = viewModel.layout == EpubLayout.REFLOWABLE &&
+            settings.value.scroll && !settings.value.verticalText
+        updateScrollPageTransformer(isVerticalScroll)
     }
 
     private fun resetResourcePagerAdapter() {
@@ -572,6 +578,12 @@ public class EpubNavigatorFragment internal constructor(
         if (viewModel.layout == EpubLayout.REFLOWABLE) {
             if (previous.fontSize != new.fontSize) {
                 r2PagerAdapter?.setFontSize(new.fontSize)
+            }
+
+            val prevScrollVertical = previous.scroll && !previous.verticalText
+            val newScrollVertical = new.scroll && !new.verticalText
+            if (prevScrollVertical != newScrollVertical) {
+                updateScrollPageTransformer(newScrollVertical)
             }
         }
     }
@@ -782,6 +794,9 @@ public class EpubNavigatorFragment internal constructor(
         override val readingProgression: ReadingProgression
             get() = viewModel.readingProgression
 
+        override val verticalText: Boolean
+            get() = settings.value.verticalText
+
         override fun onResourceLoaded(webView: R2BasicWebView, link: Link) {
             run(viewModel.onResourceLoaded(webView, link))
         }
@@ -795,6 +810,11 @@ public class EpubNavigatorFragment internal constructor(
                 ) == true
             ) {
                 state = State.Ready
+            }
+
+            if (scrollToEndOnNextLoad) {
+                scrollToEndOnNextLoad = false
+                webView.scrollToEnd()
             }
 
             notifyCurrentLocation()
@@ -878,6 +898,21 @@ public class EpubNavigatorFragment internal constructor(
                 ?.let { publication.get(it) }
     }
 
+    private fun updateScrollPageTransformer(verticalScrollEnabled: Boolean) {
+        if (verticalScrollEnabled) {
+            resourcePager.setPageTransformer(true, VerticalPageTransformer())
+        } else {
+            resourcePager.setPageTransformer(false, null)
+        }
+    }
+
+    private inner class VerticalPageTransformer : ViewPager.PageTransformer {
+        override fun transformPage(page: View, position: Float) {
+            page.translationX = page.width * -position
+            page.translationY = page.height * position
+        }
+    }
+
     override fun goForward(animated: Boolean): Boolean {
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
             return goToNextResource(jump = false, animated = animated)
@@ -922,6 +957,7 @@ public class EpubNavigatorFragment internal constructor(
             locatorToNextResource()?.let { listener?.onJumpToLocator(it) }
         }
 
+        scrollToEndOnNextLoad = false
         resourcePager.setCurrentItem(resourcePager.currentItem + 1, animated)
 
         currentReflowablePageFragment?.webView?.let { webView ->
@@ -944,6 +980,9 @@ public class EpubNavigatorFragment internal constructor(
             locatorToPreviousResource()?.let { listener?.onJumpToLocator(it) }
         }
 
+        if (settings.value.scroll && !settings.value.verticalText) {
+            scrollToEndOnNextLoad = true
+        }
         resourcePager.setCurrentItem(resourcePager.currentItem - 1, animated)
 
         currentReflowablePageFragment?.webView?.let { webView ->

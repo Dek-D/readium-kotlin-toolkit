@@ -8,6 +8,7 @@
  */
 
 @file:Suppress("DEPRECATION")
+@file:OptIn(org.readium.r2.shared.InternalReadiumApi::class)
 
 package org.readium.r2.navigator
 
@@ -141,6 +142,15 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
     private var mFlingDistance: Int = 0
     private var mCloseEnough: Int = 0
     private var mHasAbortedScroller: Boolean = false
+
+    private var bottomBoundaryLocked = false
+    private var topBoundaryLocked = false
+    private var wasAtBottomOnTouchDown = false
+    private var wasAtTopOnTouchDown = false
+
+    private companion object {
+        const val CHAPTER_SWIPE_THRESHOLD_DP = 30
+    }
 
     /**
      * Returns the current velocity of the active pointer.
@@ -283,6 +293,31 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                 }
             }
         )
+    }
+
+    override fun onOverScrolled(scrollX: Int, scrollY: Int, clampedX: Boolean, clampedY: Boolean) {
+        super.onOverScrolled(scrollX, scrollY, clampedX, clampedY)
+        if (scrollMode && !disablePageTurnsWhileScrolling && listener?.verticalText != true && clampedY && !isSelecting) {
+            if (scrollY > 0) bottomBoundaryLocked = true else topBoundaryLocked = true
+        }
+    }
+
+    override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+        super.onScrollChanged(l, t, oldl, oldt)
+        if (!isAtVerticalBottom()) bottomBoundaryLocked = false
+        if (!isAtVerticalTop()) topBoundaryLocked = false
+    }
+
+    private fun isAtVerticalBottom(): Boolean {
+        if (!scrollMode || listener?.verticalText == true) return false
+        val range = computeVerticalScrollRange()
+        val extent = computeVerticalScrollExtent()
+        return scrollY >= (range - extent - 4).coerceAtLeast(0)
+    }
+
+    private fun isAtVerticalTop(): Boolean {
+        if (!scrollMode || listener?.verticalText == true) return false
+        return scrollY <= 4
     }
 
     override fun onDetachedFromWindow() {
@@ -707,6 +742,13 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                 mLastMotionX = mInitialMotionX
                 mInitialMotionY = ev.y
                 mActivePointerId = ev.getPointerId(0)
+
+                if (scrollMode && !disablePageTurnsWhileScrolling && listener?.verticalText != true) {
+                    wasAtBottomOnTouchDown = isAtVerticalBottom()
+                    wasAtTopOnTouchDown = isAtVerticalTop()
+                    if (!wasAtBottomOnTouchDown) bottomBoundaryLocked = false
+                    if (!wasAtTopOnTouchDown) topBoundaryLocked = false
+                }
             }
             MotionEvent.ACTION_MOVE -> {
                 if ((mLastMotionX > (width - mGutterSize)) || (mLastMotionX < mGutterSize)) {
@@ -732,53 +774,79 @@ internal class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView
                     }
                 }
             }
-            MotionEvent.ACTION_UP -> when {
-                mIsBeingDragged -> {
-                    mIsBeingDragged = false
-                    mHasAbortedScroller = false
+            MotionEvent.ACTION_UP -> {
+                when {
+                    mIsBeingDragged -> {
+                        mIsBeingDragged = false
+                        mHasAbortedScroller = false
 
-                    val activePointerIndex = ev.findPointerIndex(mActivePointerId)
-                    val x = ev.safeGetX(activePointerIndex)
-                    val y = ev.safeGetY(activePointerIndex)
+                        val activePointerIndex = ev.findPointerIndex(mActivePointerId)
+                        val x = ev.safeGetX(activePointerIndex)
+                        val y = ev.safeGetY(activePointerIndex)
 
-                    if (scrollMode) {
-                        val totalDelta = (y - mInitialMotionY).toInt()
-                        if (abs(totalDelta) < 200) {
-                            if (mInitialMotionX < x) {
-                                scrollLeft(animated = true)
-                            } else if (mInitialMotionX > x) {
-                                scrollRight(animated = true)
+                        if (scrollMode) {
+                            val totalDelta = (y - mInitialMotionY).toInt()
+                            if (abs(totalDelta) < 200) {
+                                if (mInitialMotionX < x) {
+                                    scrollLeft(animated = true)
+                                } else if (mInitialMotionX > x) {
+                                    scrollRight(animated = true)
+                                }
                             }
-                        }
-                    } else {
-                        val velocity = getCurrentXVelocity() ?: 0
-                        val totalDelta = (x - mInitialMotionX).toInt()
-                        val targetPage = determineTargetPage(
-                            currentPage = mCurItem,
-                            initialVelocity = mInitialVelocity ?: 0,
-                            currentVelocity = velocity,
-                            deltaX = totalDelta
-                        )
+                        } else {
+                            val velocity = getCurrentXVelocity() ?: 0
+                            val totalDelta = (x - mInitialMotionX).toInt()
+                            val targetPage = determineTargetPage(
+                                currentPage = mCurItem,
+                                initialVelocity = mInitialVelocity ?: 0,
+                                currentVelocity = velocity,
+                                deltaX = totalDelta
+                            )
 
-                        when {
-                            targetPage < 0 -> {
-                                scrollLeft(animated = true)
-                            }
-                            targetPage >= numPages -> {
-                                scrollRight(animated = true)
-                            }
-                            else -> {
-                                setCurrentItemInternal(targetPage, true, velocity)
+                            when {
+                                targetPage < 0 -> {
+                                    scrollLeft(animated = true)
+                                }
+                                targetPage >= numPages -> {
+                                    scrollRight(animated = true)
+                                }
+                                else -> {
+                                    setCurrentItemInternal(targetPage, true, velocity)
+                                }
                             }
                         }
                     }
+                    // The gesture was made while a smooth scrolling was animating. If no dragging
+                    // occurred, we continue the smooth scrolling where we left off.
+                    mHasAbortedScroller -> {
+                        mHasAbortedScroller = false
+                        val velocity = getCurrentXVelocity() ?: 0
+                        setCurrentItemInternal(mCurItem, true, velocity)
+                    }
                 }
-                // The gesture was made while a smooth scrolling was animating. If no dragging
-                // occurred, we continue the smooth scrolling where we left off.
-                mHasAbortedScroller -> {
-                    mHasAbortedScroller = false
-                    val velocity = getCurrentXVelocity() ?: 0
-                    setCurrentItemInternal(mCurItem, true, velocity)
+
+                if (scrollMode && !mIsBeingDragged && !disablePageTurnsWhileScrolling && listener?.verticalText != true) {
+                    val activePointerIndex = ev.findPointerIndex(mActivePointerId)
+                    val upY = ev.safeGetY(activePointerIndex)
+                    val deltaY = upY - mInitialMotionY
+                    val threshold = CHAPTER_SWIPE_THRESHOLD_DP * resources.displayMetrics.density
+
+                    // Fallback: arm lock for slow scrolls that don't trigger the overscroll bounce
+                    if (isAtVerticalBottom()) bottomBoundaryLocked = true
+                    if (isAtVerticalTop()) topBoundaryLocked = true
+
+                    uiScope.launch {
+                        when {
+                            wasAtBottomOnTouchDown && deltaY < -threshold && bottomBoundaryLocked -> {
+                                bottomBoundaryLocked = false
+                                listener?.goToNextResource(jump = true, animated = true)
+                            }
+                            wasAtTopOnTouchDown && deltaY > threshold && topBoundaryLocked -> {
+                                topBoundaryLocked = false
+                                listener?.goToPreviousResource(jump = true, animated = true)
+                            }
+                        }
+                    }
                 }
             }
 

@@ -57,6 +57,10 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
     interface Listener {
         val readingProgression: ReadingProgression
 
+        /** Whether vertical text mode is active (e.g. CJK vertical writing). */
+        @InternalReadiumApi
+        val verticalText: Boolean get() = false
+
         /** Called when the resource content is loaded in the web view. */
         fun onResourceLoaded(webView: R2BasicWebView, link: Link) {}
 
@@ -126,6 +130,9 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
     internal var isSelecting = false
 
     val scrollMode: Boolean get() = scrollModeFlow.value
+
+    /** When true, reaching a chapter boundary in scroll mode will not trigger a chapter change. */
+    var disablePageTurnsWhileScrolling: Boolean = false
 
     var callback: OnOverScrolledCallback? = null
 
