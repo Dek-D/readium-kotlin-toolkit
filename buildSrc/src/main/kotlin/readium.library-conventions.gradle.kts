@@ -87,5 +87,9 @@ mavenPublishing {
     }
 
     publishToMavenCentral(SonatypeHost.S01)
-    signAllPublications()
+    // Only sign when credentials are present (local/CI Maven Central releases).
+    // JitPack does not provide GPG keys, so skip signing there to avoid missing .asc errors.
+    if (project.hasProperty("signing.keyId") || !System.getenv("GPG_SIGNING_KEY").isNullOrBlank()) {
+        signAllPublications()
+    }
 }
