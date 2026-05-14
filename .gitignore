@@ -82,3 +82,6 @@ lint/reports/
 docs/readium
 docs/index.md
 docs/package-list
+/.idea
+/CLAUDE.md
+/docs/
