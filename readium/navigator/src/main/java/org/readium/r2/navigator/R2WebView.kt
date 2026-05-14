@@ -70,35 +70,55 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
     }
 
     private companion object {
-        const val CHAPTER_SWIPE_THRESHOLD_DP = 30
+        // Swipe distance to change chapter when gesture starts at the boundary (user already at end/start).
+        const val CHAPTER_SWIPE_THRESHOLD_DP = 50
+        // Extra pull distance required past the boundary when the user reaches it mid-gesture
+        // (i.e., was still reading content when they hit the boundary). Higher threshold
+        // prevents accidental chapter changes while scrolling through content.
+        const val CHAPTER_OVERSCROLL_THRESHOLD_DP = 80
     }
 
     private var bottomBoundaryLocked = false
     private var topBoundaryLocked = false
-    private var wasAtBottomOnTouchDown = false
-    private var wasAtTopOnTouchDown = false
+    private var gestureHitBottom = false
+    private var gestureHitTop = false
+    // True if the gesture started while already at the boundary (vs. reaching it mid-gesture).
+    private var startedAtBottom = false
+    private var startedAtTop = false
+    // Latest tracked finger Y during the gesture — updated in ACTION_MOVE.
+    private var mCurrentMotionY = 0f
+    // Y position of the finger when content first clamped at the boundary (onOverScrolled).
+    // Float.NaN means the boundary was not hit via overscroll during this gesture.
+    private var clampStartY = Float.NaN
 
     private fun isAtVerticalBottom(): Boolean {
-        val contentHeight = computeVerticalScrollRange()
-        return scrollY >= contentHeight - height - 4
+        if (!scrollMode || listener?.verticalText == true) return false
+        val range = computeVerticalScrollRange()
+        val extent = computeVerticalScrollExtent()
+        val tolerancePx = (4 * resources.displayMetrics.density).toInt()
+        return scrollY >= (range - extent - tolerancePx).coerceAtLeast(0)
     }
 
     private fun isAtVerticalTop(): Boolean {
-        return scrollY <= 4
+        if (!scrollMode || listener?.verticalText == true) return false
+        val tolerancePx = (4 * resources.displayMetrics.density).toInt()
+        return scrollY <= tolerancePx
     }
 
     override fun onOverScrolled(scrollX: Int, scrollY: Int, clampedX: Boolean, clampedY: Boolean) {
         super.onOverScrolled(scrollX, scrollY, clampedX, clampedY)
-        if (scrollMode && !listener.verticalText && clampedY) {
-            if (scrollY > 0) bottomBoundaryLocked = true else topBoundaryLocked = true
+        if (scrollMode && listener.verticalText != true && clampedY) {
+            if (clampStartY.isNaN()) clampStartY = mCurrentMotionY
+            if (scrollY > 0) {
+                bottomBoundaryLocked = true
+                gestureHitBottom = true
+            } else {
+                topBoundaryLocked = true
+                gestureHitTop = true
+            }
         }
     }
 
-    override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
-        super.onScrollChanged(l, t, oldl, oldt)
-        if (!isAtVerticalBottom()) bottomBoundaryLocked = false
-        if (!isAtVerticalTop()) topBoundaryLocked = false
-    }
 
     private val USE_CACHE = false
 
@@ -722,9 +742,15 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
                 mInitialMotionY = ev.y
                 mActivePointerId = ev.getPointerId(0)
 
-                if (scrollMode) {
-                    wasAtBottomOnTouchDown = isAtVerticalBottom()
-                    wasAtTopOnTouchDown = isAtVerticalTop()
+                if (scrollMode && listener.verticalText != true) {
+                    startedAtBottom = isAtVerticalBottom()
+                    startedAtTop = isAtVerticalTop()
+                    gestureHitBottom = startedAtBottom
+                    gestureHitTop = startedAtTop
+                    if (!startedAtBottom) bottomBoundaryLocked = false
+                    if (!startedAtTop) topBoundaryLocked = false
+                    clampStartY = Float.NaN
+                    mCurrentMotionY = ev.y
                 }
             }
             MotionEvent.ACTION_MOVE -> {
@@ -732,6 +758,11 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
                 if ((mLastMotionX > (width - mGutterSize)) || (mLastMotionX < mGutterSize)) {
                     requestDisallowInterceptTouchEvent(true)
                     return false
+                }
+
+                if (scrollMode) {
+                    val idx = ev.findPointerIndex(mActivePointerId)
+                    if (idx >= 0) mCurrentMotionY = ev.getY(idx)
                 }
 
                 if (!mIsBeingDragged) {
@@ -755,8 +786,7 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
             MotionEvent.ACTION_UP -> {
                 val activePointerIndex = ev.findPointerIndex(mActivePointerId)
                 val x = ev.getX(activePointerIndex)
-                val y = ev.getY(activePointerIndex)
-                val wasDragging = mIsBeingDragged
+                val upY = ev.getY(activePointerIndex)
 
                 when {
                     mIsBeingDragged -> {
@@ -788,25 +818,52 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
                     }
                 }
 
-                if (scrollMode && !wasDragging && !listener.verticalText) {
-                    val deltaY = y - mInitialMotionY
-                    val threshold = CHAPTER_SWIPE_THRESHOLD_DP * resources.displayMetrics.density
+                if (scrollMode && listener.verticalText != true) {
+                    val deltaY = upY - mInitialMotionY
 
-                    if (isAtVerticalBottom()) bottomBoundaryLocked = true
-                    if (isAtVerticalTop()) topBoundaryLocked = true
+                    if (isAtVerticalBottom()) { bottomBoundaryLocked = true; gestureHitBottom = true }
+                    if (isAtVerticalTop()) { topBoundaryLocked = true; gestureHitTop = true }
+
+                    // When content was clamped mid-gesture (onOverScrolled fired), measure only
+                    // the extra distance pulled past the boundary — prevents accidental chapter
+                    // changes from normal reading scrolls that happen to reach the end of content.
+                    // When gesture started at the boundary (startedAtBottom/Top), measure from
+                    // gesture start since the user deliberately began there.
+                    val effectiveDelta: Float
+                    val effectiveThreshold: Float
+                    if (!clampStartY.isNaN()) {
+                        effectiveDelta = upY - clampStartY
+                        effectiveThreshold = CHAPTER_OVERSCROLL_THRESHOLD_DP * resources.displayMetrics.density
+                    } else {
+                        effectiveDelta = if (startedAtBottom || startedAtTop) deltaY else 0f
+                        effectiveThreshold = CHAPTER_SWIPE_THRESHOLD_DP * resources.displayMetrics.density
+                    }
 
                     when {
-                        wasAtBottomOnTouchDown && deltaY < -threshold && bottomBoundaryLocked ->
+                        gestureHitBottom && effectiveDelta < -effectiveThreshold && bottomBoundaryLocked -> {
+                            bottomBoundaryLocked = false
                             listener.goToNextResource(jump = true, animated = true)
-                        wasAtTopOnTouchDown && deltaY > threshold && topBoundaryLocked ->
+                        }
+                        gestureHitTop && effectiveDelta > effectiveThreshold && topBoundaryLocked -> {
+                            topBoundaryLocked = false
                             listener.goToPreviousResource(jump = true, animated = true)
+                        }
                     }
                 }
             }
 
-            MotionEvent.ACTION_CANCEL -> if (mIsBeingDragged) {
-                mIsBeingDragged = false
-                scrollToItem(mCurItem, true, 0, false)
+            MotionEvent.ACTION_CANCEL -> {
+                if (mIsBeingDragged) {
+                    mIsBeingDragged = false
+                    scrollToItem(mCurItem, true, 0, false)
+                }
+                gestureHitBottom = false
+                gestureHitTop = false
+                bottomBoundaryLocked = false
+                topBoundaryLocked = false
+                startedAtBottom = false
+                startedAtTop = false
+                clampStartY = Float.NaN
             }
             MotionEvent.ACTION_POINTER_DOWN -> {
                 val index = ev.actionIndex
