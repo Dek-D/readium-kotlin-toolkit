@@ -47,12 +47,10 @@ afterEvaluate {
                 from(components.getByName("release"))
                 groupId = "com.github.Dek-D"
                 artifactId = "readium-navigator"
-
             }
         }
     }
 }
-
 
 dependencies {
     api(project(":readium:readium-shared"))

@@ -72,6 +72,7 @@ import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.KeyInterceptorView
 import org.readium.r2.navigator.input.TapEvent
+import org.readium.r2.navigator.pager.OnSwipeOutListener
 import org.readium.r2.navigator.pager.R2EpubPageFragment
 import org.readium.r2.navigator.pager.R2PagerAdapter
 import org.readium.r2.navigator.pager.R2PagerAdapter.PageResource
@@ -89,7 +90,6 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.ReadingProgression as PublicationReadingProgression
-import org.readium.r2.navigator.pager.OnSwipeOutListener
 import org.readium.r2.shared.publication.epub.EpubLayout
 import org.readium.r2.shared.publication.presentation.presentation
 import org.readium.r2.shared.publication.services.positionsByReadingOrder
@@ -338,6 +338,9 @@ public class EpubNavigatorFragment internal constructor(
     internal lateinit var adapter: R2PagerAdapter
     private lateinit var currentActivity: FragmentActivity
 
+    private var chapterNavigationInProgress = false
+    private var scrollToEndOnNextLoad = false
+
     private var _binding: ReadiumNavigatorViewpagerBinding? = null
     private val binding get() = _binding!!
 
@@ -413,8 +416,15 @@ public class EpubNavigatorFragment internal constructor(
 
         resourcePager = binding.resourcePager
         resetResourcePager()
+        updateScrollPageTransformer(viewModel.isScrollEnabled.value)
 
         resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state == ViewPager.SCROLL_STATE_IDLE) {
+                    chapterNavigationInProgress = false
+                }
+            }
 
             override fun onPageSelected(position: Int) {
 //                if (viewModel.layout == EpubLayout.REFLOWABLE) {
@@ -453,7 +463,21 @@ public class EpubNavigatorFragment internal constructor(
         return view
     }
 
+    private inner class VerticalPageTransformer : ViewPager.PageTransformer {
+        override fun transformPage(page: View, position: Float) {
+            page.translationX = page.width * -position
+            page.translationY = page.height * position
+        }
+    }
 
+    private fun updateScrollPageTransformer(verticalScrollEnabled: Boolean) {
+        resourcePager.verticalScrollMode = verticalScrollEnabled
+        if (verticalScrollEnabled) {
+            resourcePager.setPageTransformer(true, VerticalPageTransformer())
+        } else {
+            resourcePager.setPageTransformer(false, null)
+        }
+    }
 
     private fun resetResourcePager() {
         val parent = requireNotNull(resourcePager.parent as? ConstraintLayout) {
@@ -572,6 +596,9 @@ public class EpubNavigatorFragment internal constructor(
         if (viewModel.layout == EpubLayout.REFLOWABLE) {
             if (previous.fontSize != new.fontSize) {
                 r2PagerAdapter?.setFontSize(new.fontSize)
+            }
+            if (previous.scroll != new.scroll) {
+                updateScrollPageTransformer(new.scroll)
             }
         }
     }
@@ -789,6 +816,11 @@ public class EpubNavigatorFragment internal constructor(
         override fun onPageLoaded(webView: R2BasicWebView, link: Link) {
             paginationListener?.onPageLoaded()
 
+            if (scrollToEndOnNextLoad) {
+                scrollToEndOnNextLoad = false
+                webView.scrollToEnd()
+            }
+
             val href = link.url()
             if (state is State.Initializing || (state as? State.Loading)?.initialResourceHref?.isEquivalent(
                     href
@@ -913,6 +945,8 @@ public class EpubNavigatorFragment internal constructor(
     }
 
     private fun goToNextResource(jump: Boolean, animated: Boolean): Boolean {
+        if (chapterNavigationInProgress) return false
+
         val adapter = resourcePager.adapter ?: return false
         if (resourcePager.currentItem >= adapter.count - 1) {
             return false
@@ -922,7 +956,12 @@ public class EpubNavigatorFragment internal constructor(
             locatorToNextResource()?.let { listener?.onJumpToLocator(it) }
         }
 
+        chapterNavigationInProgress = true
+        scrollToEndOnNextLoad = false
+
         resourcePager.setCurrentItem(resourcePager.currentItem + 1, animated)
+
+        if (!animated) view?.post { chapterNavigationInProgress = false }
 
         currentReflowablePageFragment?.webView?.let { webView ->
             if (settings.value.readingProgression == ReadingProgression.RTL) {
@@ -936,6 +975,8 @@ public class EpubNavigatorFragment internal constructor(
     }
 
     private fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean {
+        if (chapterNavigationInProgress) return false
+
         if (resourcePager.currentItem <= 0) {
             return false
         }
@@ -944,7 +985,14 @@ public class EpubNavigatorFragment internal constructor(
             locatorToPreviousResource()?.let { listener?.onJumpToLocator(it) }
         }
 
+        chapterNavigationInProgress = true
+        if (viewModel.isScrollEnabled.value) {
+            scrollToEndOnNextLoad = true
+        }
+
         resourcePager.setCurrentItem(resourcePager.currentItem - 1, animated)
+
+        if (!animated) view?.post { chapterNavigationInProgress = false }
 
         currentReflowablePageFragment?.webView?.let { webView ->
             if (settings.value.readingProgression == ReadingProgression.RTL) {
@@ -1209,7 +1257,6 @@ public class EpubNavigatorFragment internal constructor(
         }
         return false
     }
-
 }
 
 @ExperimentalReadiumApi

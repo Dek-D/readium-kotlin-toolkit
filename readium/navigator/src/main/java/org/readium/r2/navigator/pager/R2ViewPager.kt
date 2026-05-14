@@ -24,10 +24,12 @@ internal class R2ViewPager : R2RTLViewPager {
         FXL,
         WEBPUB,
         AUDIO,
-        DiViNa,
+        DiViNa
     }
 
     internal lateinit var publicationType: PublicationType
+
+    var verticalScrollMode = false
 
     private var mStartDragX = 0f
     private var mStartDragY = 0f
@@ -98,7 +100,6 @@ internal class R2ViewPager : R2RTLViewPager {
             // java.lang.IllegalArgumentException: pointerIndex out of range
             // i.e. https://stackoverflow.com/q/48496257/1474476
             return super.dispatchTouchEvent(ev)
-
         } catch (ex: IllegalArgumentException) {
             Timber.e(ex)
             false
@@ -121,7 +122,6 @@ internal class R2ViewPager : R2RTLViewPager {
             // java.lang.IllegalArgumentException: pointerIndex out of range
             // i.e. https://stackoverflow.com/q/48496257/1474476
             return super.onTouchEvent(ev)
-
         } catch (ex: IllegalArgumentException) {
             Timber.e(ex)
             false
@@ -132,8 +132,12 @@ internal class R2ViewPager : R2RTLViewPager {
         if (publicationType == PublicationType.EPUB) {
             when (ev.action and MotionEvent.ACTION_MASK) {
                 MotionEvent.ACTION_DOWN -> {
-                    // prevent swipe from view pager directly
                     return false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (verticalScrollMode) {
+                        return false
+                    }
                 }
             }
         }
