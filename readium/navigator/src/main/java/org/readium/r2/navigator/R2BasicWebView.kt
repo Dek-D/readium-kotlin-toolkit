@@ -50,6 +50,7 @@ open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebView(conte
 
     interface Listener {
         val readingProgression: ReadingProgression
+        val verticalText: Boolean get() = false
         fun onResourceLoaded(link: Link?, webView: R2BasicWebView, url: String?) {}
         fun onPageLoaded()
         fun onPageChanged(pageIndex: Int, totalPages: Int, url: String)

@@ -69,6 +69,37 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
         }
     }
 
+    private companion object {
+        const val CHAPTER_SWIPE_THRESHOLD_DP = 30
+    }
+
+    private var bottomBoundaryLocked = false
+    private var topBoundaryLocked = false
+    private var wasAtBottomOnTouchDown = false
+    private var wasAtTopOnTouchDown = false
+
+    private fun isAtVerticalBottom(): Boolean {
+        val contentHeight = computeVerticalScrollRange()
+        return scrollY >= contentHeight - height - 4
+    }
+
+    private fun isAtVerticalTop(): Boolean {
+        return scrollY <= 4
+    }
+
+    override fun onOverScrolled(scrollX: Int, scrollY: Int, clampedX: Boolean, clampedY: Boolean) {
+        super.onOverScrolled(scrollX, scrollY, clampedX, clampedY)
+        if (scrollMode && !listener.verticalText && clampedY) {
+            if (scrollY > 0) bottomBoundaryLocked = true else topBoundaryLocked = true
+        }
+    }
+
+    override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
+        super.onScrollChanged(l, t, oldl, oldt)
+        if (!isAtVerticalBottom()) bottomBoundaryLocked = false
+        if (!isAtVerticalTop()) topBoundaryLocked = false
+    }
+
     private val USE_CACHE = false
 
     private val MAX_SETTLE_DURATION = 600 // ms
@@ -690,6 +721,11 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
                 mLastMotionX = mInitialMotionX
                 mInitialMotionY = ev.y
                 mActivePointerId = ev.getPointerId(0)
+
+                if (scrollMode) {
+                    wasAtBottomOnTouchDown = isAtVerticalBottom()
+                    wasAtTopOnTouchDown = isAtVerticalTop()
+                }
             }
             MotionEvent.ACTION_MOVE -> {
 
@@ -716,62 +752,55 @@ class R2WebView(context: Context, attrs: AttributeSet) : R2BasicWebView(context,
                     }
                 }
             }
-            MotionEvent.ACTION_UP -> when {
-                mIsBeingDragged -> {
-                    mIsBeingDragged = false
-                    mHasAbortedScroller = false
+            MotionEvent.ACTION_UP -> {
+                val activePointerIndex = ev.findPointerIndex(mActivePointerId)
+                val x = ev.getX(activePointerIndex)
+                val y = ev.getY(activePointerIndex)
+                val wasDragging = mIsBeingDragged
 
-                    val activePointerIndex = ev.findPointerIndex(mActivePointerId)
-                    val x = ev.getX(activePointerIndex)
-                    val y = ev.getY(activePointerIndex)
+                when {
+                    mIsBeingDragged -> {
+                        mIsBeingDragged = false
+                        mHasAbortedScroller = false
 
-                    if (scrollMode) {
-                        val totalDelta = (y - mInitialMotionY).toInt()
-                        if (abs(totalDelta) < 160) {
-                            if (mInitialMotionX < x) {
-                                scrollLeft(animated = true)
-                            } else if (mInitialMotionX > x) {
-                                scrollRight(animated = true)
-                            }
-                        }
-                        // pull down to change chapter (still has an issue)
-//                        val totalDelta = (x - mInitialMotionX).toInt()
-//                        if (abs(totalDelta) < 200) {
-//                            if (mInitialMotionY < y) {
-//                                scrollLeft(animated = true)
-//                            } else if (mInitialMotionY > y) {
-//                                scrollRight(animated = true)
-//                            }
-//                        }
-                    } else {
-                        val velocity = getCurrentXVelocity() ?: 0
-                        val totalDelta = (x - mInitialMotionX).toInt()
-                        val targetPage = determineTargetPage(
-                            currentPage = mCurItem,
-                            initialVelocity = mInitialVelocity ?: 0,
-                            currentVelocity = velocity,
-                            deltaX = totalDelta
-                        )
-
-                        when {
-                            targetPage < 0 -> {
-                                scrollLeft(animated = true)
-                            }
-                            targetPage >= numPages -> {
-                                scrollRight(animated = true)
-                            }
-                            else -> {
-                                setCurrentItemInternal(targetPage, true, velocity)
+                        if (!scrollMode) {
+                            val velocity = getCurrentXVelocity() ?: 0
+                            val totalDelta = (x - mInitialMotionX).toInt()
+                            val targetPage = determineTargetPage(
+                                currentPage = mCurItem,
+                                initialVelocity = mInitialVelocity ?: 0,
+                                currentVelocity = velocity,
+                                deltaX = totalDelta
+                            )
+                            when {
+                                targetPage < 0 -> scrollLeft(animated = true)
+                                targetPage >= numPages -> scrollRight(animated = true)
+                                else -> setCurrentItemInternal(targetPage, true, velocity)
                             }
                         }
                     }
+                    // The gesture was made while a smooth scrolling was animating. If no dragging
+                    // occurred, we continue the smooth scrolling where we left off.
+                    mHasAbortedScroller -> {
+                        mHasAbortedScroller = false
+                        val velocity = getCurrentXVelocity() ?: 0
+                        setCurrentItemInternal(mCurItem, true, velocity)
+                    }
                 }
-                // The gesture was made while a smooth scrolling was animating. If no dragging
-                // occurred, we continue the smooth scrolling where we left off.
-                mHasAbortedScroller -> {
-                    mHasAbortedScroller = false
-                    val velocity = getCurrentXVelocity() ?: 0
-                    setCurrentItemInternal(mCurItem, true, velocity)
+
+                if (scrollMode && !wasDragging && !listener.verticalText) {
+                    val deltaY = y - mInitialMotionY
+                    val threshold = CHAPTER_SWIPE_THRESHOLD_DP * resources.displayMetrics.density
+
+                    if (isAtVerticalBottom()) bottomBoundaryLocked = true
+                    if (isAtVerticalTop()) topBoundaryLocked = true
+
+                    when {
+                        wasAtBottomOnTouchDown && deltaY < -threshold && bottomBoundaryLocked ->
+                            listener.goToNextResource(jump = true, animated = true)
+                        wasAtTopOnTouchDown && deltaY > threshold && topBoundaryLocked ->
+                            listener.goToPreviousResource(jump = true, animated = true)
+                    }
                 }
             }
 

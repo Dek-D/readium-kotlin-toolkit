@@ -122,6 +122,9 @@ class EpubNavigatorFragment private constructor(
     internal lateinit var adapter: R2PagerAdapter
     private lateinit var currentActivity: FragmentActivity
 
+    private var chapterNavigationInProgress = false
+    private var scrollToEndOnNextLoad = false
+
     internal var navigatorDelegate: NavigatorDelegate? = null
 
     private val r2Activity: R2EpubActivity? get() = activity as? R2EpubActivity
@@ -226,34 +229,34 @@ class EpubNavigatorFragment private constructor(
         resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
 
             override fun onPageSelected(position: Int) {
-//                if (publication.metadata.presentation.layout == EpubLayout.REFLOWABLE) {
-//                    resourcePager.disableTouchEvents = true
-//                }
+                val webView = currentFragment?.webView
                 if (preferences.getBoolean(SCROLL_REF, false)) {
                     if (currentPagerPosition < position) {
-                        // handle swipe LEFT
-                        currentFragment?.webView?.scrollToStart()
+                        webView?.post { webView.scrollToStart() }
                     } else if (currentPagerPosition > position) {
-                        // handle swipe RIGHT
-                        currentFragment?.webView?.scrollToStart()
+                        webView?.post { webView.scrollToEnd() }
                     }
                 } else {
                     if (currentPagerPosition < position) {
-                        // handle swipe LEFT
-                        currentFragment?.webView?.setCurrentItem(0, false)
+                        webView?.post { webView.setCurrentItem(0, false) }
                     } else if (currentPagerPosition > position) {
-                        // handle swipe RIGHT
-                        currentFragment?.webView?.apply {
-                            setCurrentItem(numPages - 1, false)
-                        }
+                        webView?.post { webView.apply { setCurrentItem(numPages - 1, false) } }
                     }
                 }
-                currentPagerPosition = position // Update current position
+                currentPagerPosition = position
 
                 notifyCurrentLocation()
             }
 
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state == ViewPager.SCROLL_STATE_IDLE) {
+                    chapterNavigationInProgress = false
+                }
+            }
+
         })
+
+        updateScrollPageTransformer(preferences.getBoolean(SCROLL_REF, false))
 
         // Restore the last locator before a configuration change (e.g. screen rotation), or the
         // initial locator when given.
@@ -442,6 +445,11 @@ class EpubNavigatorFragment private constructor(
             r2Activity?.onPageLoaded()
             paginationListener?.onPageLoaded()
             notifyCurrentLocation()
+
+            if (scrollToEndOnNextLoad) {
+                scrollToEndOnNextLoad = false
+                currentFragment?.webView?.scrollToEnd()
+            }
         }
 
         override fun onPageChanged(pageIndex: Int, totalPages: Int, url: String) {
@@ -545,6 +553,22 @@ class EpubNavigatorFragment private constructor(
         }
     }
 
+    private inner class VerticalPageTransformer : ViewPager.PageTransformer {
+        override fun transformPage(page: View, position: Float) {
+            page.translationX = page.width * -position
+            page.translationY = page.height * position
+        }
+    }
+
+    private fun updateScrollPageTransformer(verticalScrollEnabled: Boolean) {
+        resourcePager.verticalScrollMode = verticalScrollEnabled
+        if (verticalScrollEnabled) {
+            resourcePager.setPageTransformer(true, VerticalPageTransformer())
+        } else {
+            resourcePager.setPageTransformer(false, null)
+        }
+    }
+
     override fun goForward(animated: Boolean, completion: () -> Unit): Boolean {
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
             return goToNextResource(jump = false, animated = animated, completion)
@@ -582,47 +606,55 @@ class EpubNavigatorFragment private constructor(
     }
 
     private fun goToNextResource(jump: Boolean, animated: Boolean, completion: () -> Unit = {}): Boolean {
+        if (chapterNavigationInProgress) return false
 
         val adapter = resourcePager.adapter ?: return false
         if (resourcePager.currentItem >= adapter.count - 1) {
             return false
         }
 
+        chapterNavigationInProgress = true
+        scrollToEndOnNextLoad = false
         resourcePager.setCurrentItem(resourcePager.currentItem + 1, animated)
 
-        if (publication.metadata.effectiveReadingProgression == ReadingProgression.RTL) {
-            // The view has RTL layout
-            currentFragment?.webView?.apply {
-                setCurrentItem(numPages - 1, false)
-            }
-        } else {
-            // The view has LTR layout
-            currentFragment?.webView?.apply {
-                setCurrentItem(0, false)
+        if (!animated) view?.post { chapterNavigationInProgress = false }
+
+        if (!preferences.getBoolean(SCROLL_REF, false)) {
+            if (publication.metadata.effectiveReadingProgression == ReadingProgression.RTL) {
+                currentFragment?.webView?.apply { setCurrentItem(numPages - 1, false) }
+            } else {
+                currentFragment?.webView?.apply { setCurrentItem(0, false) }
             }
         }
+
         viewLifecycleOwner.lifecycleScope.launch { completion() }
         return true
     }
 
     private fun goToPreviousResource(jump: Boolean, animated: Boolean, completion: () -> Unit = {}): Boolean {
+        if (chapterNavigationInProgress) return false
         if (resourcePager.currentItem <= 0) {
             return false
         }
 
+        chapterNavigationInProgress = true
+
+        if (preferences.getBoolean(SCROLL_REF, false)) {
+            scrollToEndOnNextLoad = true
+        }
+
         resourcePager.setCurrentItem(resourcePager.currentItem - 1, animated)
 
-        if (publication.metadata.effectiveReadingProgression == ReadingProgression.RTL) {
-            // The view has RTL layout
-            currentFragment?.webView?.apply {
-                setCurrentItem(0, false)
-            }
-        } else {
-            // The view has LTR layout
-            currentFragment?.webView?.apply {
-                setCurrentItem(numPages - 1, false)
+        if (!animated) view?.post { chapterNavigationInProgress = false }
+
+        if (!preferences.getBoolean(SCROLL_REF, false)) {
+            if (publication.metadata.effectiveReadingProgression == ReadingProgression.RTL) {
+                currentFragment?.webView?.apply { setCurrentItem(0, false) }
+            } else {
+                currentFragment?.webView?.apply { setCurrentItem(numPages - 1, false) }
             }
         }
+
         viewLifecycleOwner.lifecycleScope.launch { completion() }
         return true
     }

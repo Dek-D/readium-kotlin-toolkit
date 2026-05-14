@@ -23,6 +23,7 @@ class R2ViewPager : ViewPager {
 
 
     lateinit var type: Publication.TYPE
+    var verticalScrollMode = false
 
     private var mStartDragX = 0f
     private var mStartDragY = 0f
@@ -127,8 +128,12 @@ class R2ViewPager : ViewPager {
         if (type == Publication.TYPE.EPUB) {
             when (ev.action and MotionEvent.ACTION_MASK) {
                 MotionEvent.ACTION_DOWN -> {
-                    // prevent swipe from view pager directly
                     return false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (verticalScrollMode) {
+                        return false
+                    }
                 }
             }
         }
