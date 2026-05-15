@@ -1,3 +1,5 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
@@ -58,6 +60,14 @@ dependencies {
 }
 
 mavenPublishing {
+    configure(
+        AndroidSingleVariantLibrary(
+            variant = "release",
+            sourcesJar = true,
+            javadocJar = JavadocJar.Empty()
+        )
+    )
+
     coordinates(
         groupId = group.toString(),
         artifactId = property("pom.artifactId") as String,
