@@ -340,6 +340,7 @@ public class EpubNavigatorFragment internal constructor(
 
     private var chapterNavigationInProgress = false
     private var scrollToEndOnNextLoad = false
+    private var lastChapterNavigationTime = 0L
 
     private var _binding: ReadiumNavigatorViewpagerBinding? = null
     private val binding get() = _binding!!
@@ -416,44 +417,6 @@ public class EpubNavigatorFragment internal constructor(
 
         resourcePager = binding.resourcePager
         resetResourcePager()
-        updateScrollPageTransformer(viewModel.isScrollEnabled.value)
-
-        resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
-
-            override fun onPageScrollStateChanged(state: Int) {
-                if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    chapterNavigationInProgress = false
-                }
-            }
-
-            override fun onPageSelected(position: Int) {
-//                if (viewModel.layout == EpubLayout.REFLOWABLE) {
-//                    resourcePager.disableTouchEvents = true
-//                }
-                currentReflowablePageFragment?.webView?.let { webView ->
-                    if (viewModel.isScrollEnabled.value) {
-                        if (currentPagerPosition < position) {
-                            // handle swipe LEFT
-                            webView.scrollToStart()
-                        } else if (currentPagerPosition > position) {
-                            // handle swipe RIGHT
-                            webView.scrollToEnd()
-                        }
-                    } else {
-                        if (currentPagerPosition < position) {
-                            // handle swipe LEFT
-                            webView.setCurrentItem(0, false)
-                        } else if (currentPagerPosition > position) {
-                            // handle swipe RIGHT
-                            webView.setCurrentItem(webView.numPages - 1, false)
-                        }
-                    }
-                }
-                currentPagerPosition = position // Update current position
-
-                notifyCurrentLocation()
-            }
-        })
 
         // Fixed layout publications cannot intercept JS events yet.
         if (publication.metadata.presentation.layout == EpubLayout.FIXED) {
@@ -502,6 +465,43 @@ public class EpubNavigatorFragment internal constructor(
         parent.addView(resourcePager)
 
         resetResourcePagerAdapter()
+
+        // Re-apply scroll transformer so the new pager has the correct vertical/horizontal mode.
+        // Without this, switching scroll modes triggers InvalidateViewPager which creates a fresh
+        // pager that loses verticalScrollMode and VerticalPageTransformer.
+        updateScrollPageTransformer(viewModel.isScrollEnabled.value)
+
+        // Re-register the page change listener on every new pager instance.
+        // Without this, switching scroll modes (which recreates the pager via InvalidateViewPager)
+        // loses the listener, so chapterNavigationInProgress never resets and navigation is blocked.
+        resourcePager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state == ViewPager.SCROLL_STATE_IDLE) {
+                    chapterNavigationInProgress = false
+                }
+            }
+
+            override fun onPageSelected(position: Int) {
+                currentReflowablePageFragment?.webView?.let { webView ->
+                    if (viewModel.isScrollEnabled.value) {
+                        if (currentPagerPosition < position) {
+                            webView.scrollToStart()
+                        } else if (currentPagerPosition > position) {
+                            webView.scrollToEnd()
+                        }
+                    } else {
+                        if (currentPagerPosition < position) {
+                            webView.setCurrentItem(0, false)
+                        } else if (currentPagerPosition > position) {
+                            webView.setCurrentItem(webView.numPages - 1, false)
+                        }
+                    }
+                }
+                currentPagerPosition = position
+                notifyCurrentLocation()
+            }
+        })
     }
 
     private fun resetResourcePagerAdapter() {
@@ -947,6 +947,13 @@ public class EpubNavigatorFragment internal constructor(
     private fun goToNextResource(jump: Boolean, animated: Boolean): Boolean {
         if (chapterNavigationInProgress) return false
 
+        // Prevent chapter skipping on fast swipes in scroll mode
+        if (viewModel.isScrollEnabled.value) {
+            val now = android.os.SystemClock.uptimeMillis()
+            if (now - lastChapterNavigationTime < CHAPTER_NAVIGATION_COOLDOWN_MS) return false
+            lastChapterNavigationTime = now
+        }
+
         val adapter = resourcePager.adapter ?: return false
         if (resourcePager.currentItem >= adapter.count - 1) {
             return false
@@ -963,11 +970,14 @@ public class EpubNavigatorFragment internal constructor(
 
         if (!animated) view?.post { chapterNavigationInProgress = false }
 
-        currentReflowablePageFragment?.webView?.let { webView ->
-            if (settings.value.readingProgression == ReadingProgression.RTL) {
-                webView.setCurrentItem(webView.numPages - 1, false)
-            } else {
-                webView.setCurrentItem(0, false)
+        // In scroll mode, skip setting webView position to avoid resetting scroll to 0
+        if (!viewModel.isScrollEnabled.value) {
+            currentReflowablePageFragment?.webView?.let { webView ->
+                if (settings.value.readingProgression == ReadingProgression.RTL) {
+                    webView.setCurrentItem(webView.numPages - 1, false)
+                } else {
+                    webView.setCurrentItem(0, false)
+                }
             }
         }
 
@@ -976,6 +986,13 @@ public class EpubNavigatorFragment internal constructor(
 
     private fun goToPreviousResource(jump: Boolean, animated: Boolean): Boolean {
         if (chapterNavigationInProgress) return false
+
+        // Prevent chapter skipping on fast swipes in scroll mode
+        if (viewModel.isScrollEnabled.value) {
+            val now = android.os.SystemClock.uptimeMillis()
+            if (now - lastChapterNavigationTime < CHAPTER_NAVIGATION_COOLDOWN_MS) return false
+            lastChapterNavigationTime = now
+        }
 
         if (resourcePager.currentItem <= 0) {
             return false
@@ -994,11 +1011,14 @@ public class EpubNavigatorFragment internal constructor(
 
         if (!animated) view?.post { chapterNavigationInProgress = false }
 
-        currentReflowablePageFragment?.webView?.let { webView ->
-            if (settings.value.readingProgression == ReadingProgression.RTL) {
-                webView.setCurrentItem(0, false)
-            } else {
-                webView.setCurrentItem(webView.numPages - 1, false)
+        // In scroll mode, skip setting webView position to avoid resetting scroll to 0
+        if (!viewModel.isScrollEnabled.value) {
+            currentReflowablePageFragment?.webView?.let { webView ->
+                if (settings.value.readingProgression == ReadingProgression.RTL) {
+                    webView.setCurrentItem(0, false)
+                } else {
+                    webView.setCurrentItem(webView.numPages - 1, false)
+                }
             }
         }
 
@@ -1167,6 +1187,8 @@ public class EpubNavigatorFragment internal constructor(
     }
 
     public companion object {
+
+        private const val CHAPTER_NAVIGATION_COOLDOWN_MS = 500L
 
         /**
          * Creates a factory for [EpubNavigatorFragment].
