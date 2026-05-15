@@ -86,6 +86,9 @@ mavenPublishing {
         }
     }
 
-    publishToMavenCentral(SonatypeHost.S01)
-    signAllPublications()
+    if (providers.gradleProperty("signing.keyId").isPresent ||
+        providers.gradleProperty("signing.gnupg.keyName").isPresent) {
+        publishToMavenCentral(SonatypeHost.S01)
+        signAllPublications()
+    }
 }
