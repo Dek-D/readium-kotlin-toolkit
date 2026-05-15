@@ -483,22 +483,33 @@ public class EpubNavigatorFragment internal constructor(
             }
 
             override fun onPageSelected(position: Int) {
-                currentReflowablePageFragment?.webView?.let { webView ->
-                    if (viewModel.isScrollEnabled.value) {
-                        if (currentPagerPosition < position) {
-                            webView.scrollToStart()
-                        } else if (currentPagerPosition > position) {
-                            webView.scrollToEnd()
+                val prevPosition = currentPagerPosition
+                currentPagerPosition = position
+
+                if (viewModel.isScrollEnabled.value) {
+                    // Defer scroll in scroll mode so the WebView is fully settled after
+                    // the ViewPager transition before we adjust the scroll position.
+                    // Calling scrollToEnd/scrollToStart synchronously here can run before
+                    // the WebView layout is committed, causing the scroll to be ignored.
+                    view?.post {
+                        currentReflowablePageFragment?.webView?.let { webView ->
+                            if (prevPosition < position) {
+                                webView.scrollToStart()
+                            } else if (prevPosition > position) {
+                                webView.scrollToEnd()
+                            }
                         }
-                    } else {
-                        if (currentPagerPosition < position) {
+                    }
+                } else {
+                    currentReflowablePageFragment?.webView?.let { webView ->
+                        if (prevPosition < position) {
                             webView.setCurrentItem(0, false)
-                        } else if (currentPagerPosition > position) {
+                        } else if (prevPosition > position) {
                             webView.setCurrentItem(webView.numPages - 1, false)
                         }
                     }
                 }
-                currentPagerPosition = position
+
                 notifyCurrentLocation()
             }
         })
