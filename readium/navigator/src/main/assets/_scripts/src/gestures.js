@@ -19,6 +19,22 @@ function onClick(event) {
   }
 
   var pixelRatio = window.devicePixelRatio;
+
+  var imgElement = event.target.closest("img");
+  if (imgElement) {
+    event.stopPropagation();
+    event.preventDefault();
+    Android.onImageTap(
+      JSON.stringify({
+        src: imgElement.src,
+        alt: imgElement.alt || "",
+        x: event.clientX * pixelRatio,
+        y: event.clientY * pixelRatio,
+      })
+    );
+    return;
+  }
+
   let clickEvent = {
     defaultPrevented: event.defaultPrevented,
     x: event.clientX * pixelRatio,

@@ -7,6 +7,7 @@
 package org.readium.r2.testapp.reader
 
 import android.app.AlertDialog
+import android.graphics.BitmapFactory
 import android.content.Context
 import android.graphics.Color
 import android.graphics.RectF
@@ -68,6 +69,8 @@ import org.readium.r2.navigator.util.BaseActionModeCallback
 import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.util.AbsoluteUrl
+import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.Language
 import org.readium.r2.testapp.R
 import org.readium.r2.testapp.data.model.Highlight
@@ -187,6 +190,8 @@ abstract class VisualReaderFragment : BaseReaderFragment() {
             when (event) {
                 is ReaderViewModel.VisualFragmentCommand.ShowPopup ->
                     showFootnotePopup(event.text)
+                is ReaderViewModel.VisualFragmentCommand.ShowImagePopup ->
+                    showImagePopup(event.url)
             }
         }
     }
@@ -566,6 +571,23 @@ abstract class VisualReaderFragment : BaseReaderFragment() {
             }
 
             alert.show()
+        }
+    }
+
+    private fun showImagePopup(url: AbsoluteUrl) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val urlString = url.toString()
+            val publicationBase = "https://readium/publication/"
+            if (!urlString.startsWith(publicationBase)) return@launch
+
+            val href = Url(urlString.removePrefix(publicationBase)) ?: return@launch
+            val resource = model.publication.get(href) ?: return@launch
+            val bytes = resource.read().getOrNull()
+            resource.close()
+            val bitmap = bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } ?: return@launch
+
+            ImageViewerFragment.newInstance(bitmap)
+                .show(childFragmentManager, "image_viewer")
         }
     }
 

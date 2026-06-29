@@ -266,7 +266,9 @@ public class EpubNavigatorFragment internal constructor(
         public fun onPageLoaded() {}
     }
 
-    public interface Listener : OverflowableNavigator.Listener, HyperlinkNavigator.Listener
+    public interface Listener : OverflowableNavigator.Listener, HyperlinkNavigator.Listener {
+        public fun onImageTap(url: AbsoluteUrl, point: PointF): Boolean = false
+    }
 
     private sealed class State {
         /** The navigator just started and didn't load any resource yet. */
@@ -848,6 +850,9 @@ public class EpubNavigatorFragment internal constructor(
 
         override fun onTap(point: PointF): Boolean =
             inputListener.onTap(TapEvent(point))
+
+        override fun onImageTap(url: AbsoluteUrl, point: PointF): Boolean =
+            listener?.onImageTap(url, point) ?: false
 
         override fun onDragStart(event: R2BasicWebView.DragEvent): Boolean =
             onDrag(DragEvent.Type.Start, event)
