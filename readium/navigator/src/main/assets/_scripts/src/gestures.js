@@ -22,17 +22,22 @@ function onClick(event) {
 
   var imgElement = event.target.closest("img");
   if (imgElement) {
-    event.stopPropagation();
-    event.preventDefault();
-    Android.onImageTap(
+    var shouldPreventImageTapDefault = Android.onImageTap(
       JSON.stringify({
         src: imgElement.src,
-        alt: imgElement.alt || "",
         x: event.clientX * pixelRatio,
         y: event.clientY * pixelRatio,
       })
     );
-    return;
+
+    // Only swallow the tap if the native side actually handled it (e.g. showed an image popup).
+    // Otherwise let it fall through to the normal tap handling below, e.g. for images that can't
+    // be resolved to a resource URL (such as inline data: URIs).
+    if (shouldPreventImageTapDefault) {
+      event.stopPropagation();
+      event.preventDefault();
+      return;
+    }
   }
 
   let clickEvent = {
