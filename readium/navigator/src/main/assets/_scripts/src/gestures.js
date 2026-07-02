@@ -19,6 +19,27 @@ function onClick(event) {
   }
 
   var pixelRatio = window.devicePixelRatio;
+
+  var imgElement = event.target.closest("img");
+  if (imgElement) {
+    var shouldPreventImageTapDefault = Android.onImageTap(
+      JSON.stringify({
+        src: imgElement.src,
+        x: event.clientX * pixelRatio,
+        y: event.clientY * pixelRatio,
+      })
+    );
+
+    // Only swallow the tap if the native side actually handled it (e.g. showed an image popup).
+    // Otherwise let it fall through to the normal tap handling below, e.g. for images that can't
+    // be resolved to a resource URL (such as inline data: URIs).
+    if (shouldPreventImageTapDefault) {
+      event.stopPropagation();
+      event.preventDefault();
+      return;
+    }
+  }
+
   let clickEvent = {
     defaultPrevented: event.defaultPrevented,
     x: event.clientX * pixelRatio,

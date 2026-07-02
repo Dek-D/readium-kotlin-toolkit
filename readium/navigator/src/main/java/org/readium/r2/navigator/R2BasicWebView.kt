@@ -65,6 +65,7 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         fun onPageChanged(pageIndex: Int, totalPages: Int, url: String) {}
         fun onPageEnded(end: Boolean) {}
         fun onTap(point: PointF): Boolean = false
+        fun onImageTap(url: AbsoluteUrl, point: PointF): Boolean = false
         fun onDragStart(event: DragEvent): Boolean = false
         fun onDragMove(event: DragEvent): Boolean = false
         fun onDragEnd(event: DragEvent): Boolean = false
@@ -300,6 +301,22 @@ internal open class R2BasicWebView(context: Context, attrs: AttributeSet) : WebV
         }
 
         return runBlocking(uiScope.coroutineContext) { listener?.onTap(event.point) ?: false }
+    }
+
+    @android.webkit.JavascriptInterface
+    fun onImageTap(eventJson: String): Boolean {
+        val obj = tryOrNull { JSONObject(eventJson) } ?: return false
+        val src = obj.optString("src").takeIf { it.isNotEmpty() } ?: return false
+        val x = obj.optDouble("x").toFloat()
+        val y = obj.optDouble("y").toFloat()
+        val point = PointF(x, y)
+
+        val resourceUrl = resourceUrl ?: return false
+        val imageUrl = Url(src)?.let { resourceUrl.resolve(it) }
+            ?: AbsoluteUrl(src)
+            ?: return false
+
+        return runBlocking(uiScope.coroutineContext) { listener?.onImageTap(imageUrl, point) ?: false }
     }
 
     /**

@@ -9,6 +9,7 @@
 package org.readium.r2.testapp.reader
 
 import android.graphics.Color
+import android.graphics.PointF
 import androidx.annotation.ColorInt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -283,6 +284,12 @@ class ReaderViewModel(
         activityChannel.send(ActivityCommand.OpenExternalLink(url))
     }
 
+    // EpubNavigatorFragment.Listener
+    override fun onImageTap(url: AbsoluteUrl, point: PointF): Boolean {
+        visualFragmentChannel.send(VisualFragmentCommand.ShowImagePopup(url))
+        return true
+    }
+
     override fun shouldFollowInternalLink(
         link: Link,
         context: HyperlinkNavigator.LinkContext?
@@ -334,6 +341,7 @@ class ReaderViewModel(
 
     sealed class VisualFragmentCommand {
         class ShowPopup(val text: CharSequence) : VisualFragmentCommand()
+        class ShowImagePopup(val url: AbsoluteUrl) : VisualFragmentCommand()
     }
 
     sealed class SearchCommand {
